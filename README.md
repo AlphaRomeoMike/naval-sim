@@ -4,6 +4,8 @@ A lightweight Cold War naval tactics game for the browser (US vs Soviet, roughly
 map, a deterministic simulation in a Web Worker, a tutorial and three free scenarios. Built to run on a
 2 GB Chromebook or a mid-range phone, and offline once it has loaded. "Flag Plot" is a working title.
 
+**Play it: https://flag-plot.pages.dev/**
+
 All unit and weapon numbers are simplified game values derived from the public pages in each entry's `src`
 field. They are not real performance data.
 
