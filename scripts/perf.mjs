@@ -93,7 +93,7 @@ const rows = [
 console.log(`\nPerf check: ${UNITS} units (${PACKS ? 'free tier and both paid packs' : 'free tier'}), 64x, a fresh battle measured for ${SECONDS} s from its first step after a ${WARMUP} s warm-up battle, headless Chrome`);
 for (const r of rows) console.log(`${r[2] ? 'PASS' : 'FAIL'}  ${r[0].padEnd(52)} ${r[1].padStart(10)}   (${r[3]})`);
 // Not gated, and stated plainly: on the strictest reading (every live worker step, x4) the tail is over budget.
-console.log(`INFO  ${`Sim step p95 / p99, live worker at 64x, x${k}`.padEnd(52)} ${(live.p95.toFixed(2) + ' / ' + live.p99.toFixed(2)).padStart(10)} ms (${live.p95 <= LIMITS.stepMs ? 'within' : 'OVER'} ${LIMITS.stepMs} ms; not gated: Chrome cannot throttle a worker, so this is the unthrottled worker x${k})`);
+console.log(`INFO  ${`Sim step p95 / p99, live worker at 64x, x${k}`.padEnd(52)} ${(live.p95.toFixed(2) + ' / ' + live.p99.toFixed(2)).padStart(10)} ms (${live.p99 <= LIMITS.stepMs ? 'within' : 'OVER'} ${LIMITS.stepMs} ms; not gated: Chrome cannot throttle a worker, so this is the unthrottled worker x${k})`);
 // Percentiles under CDP throttling only show the throttler's own pause length (a step is either untouched or
 // paused for milliseconds), so the gates use the throttled mean and the unthrottled p99 x rate.
 console.log(`main thread, ${RATE}x throttled: mean ${thr.bench.mean.toFixed(3)}, p99 ${thr.bench.p99.toFixed(3)}, max ${thr.bench.max.toFixed(3)} ms over 3000 steps (unthrottled mean ${base.bench.mean.toFixed(3)} ms, slowdown ${(thr.bench.mean / base.bench.mean).toFixed(2)}x)`);

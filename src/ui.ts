@@ -296,7 +296,7 @@ export function showResult(w: number): void {
 
 const KEYS: [string, string][] = [
   ['Arrow keys', 'Pan the map (move the course cursor while setting a course)'], ['+ / −', 'Zoom'], ['Space', 'Pause / resume'], [', / .', 'Slower / faster time'],
-  ['N / P', 'Next / previous own unit'], ['T / Shift+T', 'Next / previous hostile track as target'], ['C', 'Centre on the selected unit'],
+  ['N / P', 'Next / previous own unit'], ['T / Shift+T', 'Next / previous hostile track as target'], ['I', 'Show the targeted contact (N returns to your units)'], ['C', 'Centre on the selected unit'],
   ['W, then arrows, Enter', 'Set course with the cursor (Shift+Enter adds a waypoint, Esc cancels)'], ['Delete', 'Clear the course (stop)'], ['S / X', 'Speed up / down'], ['A / Z', 'Climb or come shallower / descend or go deeper'],
   ['R / O / F', 'Radar / active sonar / auto-defend on or off'], ['1 – 8', 'Fire weapon 1–8 at the target'], ['L', 'Launch the next ready aircraft'], ['B', 'Aircraft: return to its deck'],
   ['D / E / V', 'Drop sonobuoy type 1 / 2 / 3 (hold Shift to set it below the layer)'], ['Q / Y', 'Quick save / quick load'], ['M', 'Menu'], ['H or ?', 'This help'], ['Esc', 'Close a dialog or clear the selection'],
@@ -354,6 +354,7 @@ export function onKey(e: KeyboardEvent): void {
   else if (k === 'n') cycle(true, 1); else if (k === 'p') cycle(true, -1);
   else if (k === 't') cycle(false, e.shiftKey ? -1 : 1);
   else if (k === 'c') centerOn(id);
+  else if (k === 'i' && scene.tgt >= 0) { const t = scene.tgt; select(t); centerOn(t); } // look at the targeted contact's card
   else if (k === 'm') showMenu(); else if (k === 'h' || k === '?') showHelp();
   else if (k === 'q' && G.live) requestSave().then((s) => { localStorage.setItem('save', JSON.stringify(s)); line('Game saved', 'own'); });
   else if (k === 'y') loadGame();

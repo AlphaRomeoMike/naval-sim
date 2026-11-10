@@ -23,9 +23,9 @@ export function findDeck(s: Sim, i: number): number {
   if (h >= 0 && s.gen[h] === s.hostGen[i] && deckOk(s, i, h)) return h;
   let best = -1, bd = Infinity;
   for (let v = 0; v < s.n; v++) {
-    if (!deckOk(s, i, v)) continue;
     const ex = s.x[v] - s.x[i], ey = s.y[v] - s.y[i], d2 = ex * ex + ey * ey;
-    if (d2 < bd) { bd = d2; best = v; }
+    if (d2 >= bd || !deckOk(s, i, v)) continue; // distance first: deckOk may count every aircraft in the game
+    bd = d2; best = v;
   }
   return best;
 }

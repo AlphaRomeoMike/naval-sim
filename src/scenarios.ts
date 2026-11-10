@@ -66,7 +66,7 @@ export const SCENARIOS: Scenario[] = [
     ],
   },
   {
-    id: 'tutorial', name: 'Tutorial: First Watch', lon: -30, lat: 45, layerM: 100, minutes: 90, timeoutWinner: 'ussr',
+    id: 'tutorial', name: 'Tutorial: First Watch', lon: -30, lat: 45, layerM: 100, minutes: 300, timeoutWinner: 'ussr', // five hours: nobody should lose the tutorial to the clock
     brief: 'A ten-minute guided first battle. You command one frigate in the open Atlantic; a lone Soviet frigate is somewhere to the east.\n' +
       'The yellow box at the top tells you what to do next. Everything can be done with the mouse, by touch, or with the keyboard alone.',
     units: [
