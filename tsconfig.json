@@ -1,0 +1,7 @@
+{
+  "compilerOptions": {
+    "target": "ES2022", "module": "ESNext", "moduleResolution": "bundler", "lib": ["ES2022", "DOM", "WebWorker"],
+    "strict": true, "noEmit": true, "skipLibCheck": true, "resolveJsonModule": true, "types": ["vite/client", "node"]
+  },
+  "include": ["src", "test", "scripts/*.ts"]
+}

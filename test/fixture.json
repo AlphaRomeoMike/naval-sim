@@ -1,0 +1,588 @@
+{
+ "note": "Test fixture with made-up game values. Used only by automated tests.",
+ "weapons": {
+  "ssm": {
+   "name": "Test SSM",
+   "minKm": 5,
+   "maxKm": 100,
+   "kts": 500,
+   "seeker": "arh",
+   "profile": "skim",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 1,
+   "dmg": 60,
+   "src": "https://example.org/test-fixture"
+  },
+  "sam": {
+   "name": "Test SAM",
+   "minKm": 2,
+   "maxKm": 40,
+   "kts": 1500,
+   "seeker": "sarh",
+   "profile": "direct",
+   "altMin": 5,
+   "altMax": 20000,
+   "pHit": 1,
+   "dmg": 20,
+   "src": "https://example.org/test-fixture"
+  },
+  "gun": {
+   "name": "Test gun",
+   "minKm": 0.5,
+   "maxKm": 15,
+   "kts": 0,
+   "seeker": "none",
+   "profile": "gun",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 1,
+   "dmg": 5,
+   "src": "https://example.org/test-fixture"
+  },
+  "torp": {
+   "name": "Test torpedo",
+   "minKm": 0.5,
+   "maxKm": 30,
+   "kts": 45,
+   "seeker": "acoustic",
+   "profile": "torp",
+   "altMin": -600,
+   "altMax": 0,
+   "pHit": 1,
+   "dmg": 80,
+   "src": "https://example.org/test-fixture"
+  },
+  "ltorp": {
+   "name": "Test light torpedo",
+   "minKm": 0.2,
+   "maxKm": 8,
+   "kts": 40,
+   "seeker": "acoustic",
+   "profile": "torp",
+   "altMin": -450,
+   "altMax": -5,
+   "pHit": 1,
+   "dmg": 80,
+   "src": "https://example.org/test-fixture"
+  },
+  "aam": {
+   "name": "Test AAM",
+   "minKm": 1,
+   "maxKm": 20,
+   "kts": 1600,
+   "seeker": "ir",
+   "profile": "direct",
+   "altMin": 10,
+   "altMax": 20000,
+   "pHit": 1,
+   "dmg": 10,
+   "src": "https://example.org/test-fixture"
+  },
+  "arm": {
+   "name": "Test ARM",
+   "minKm": 5,
+   "maxKm": 40,
+   "kts": 1300,
+   "seeker": "arm",
+   "profile": "direct",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 1,
+   "dmg": 20,
+   "src": "https://example.org/test-fixture"
+  },
+  "bomb": {
+   "name": "Test bomb",
+   "minKm": 0,
+   "maxKm": 3,
+   "kts": 500,
+   "seeker": "none",
+   "profile": "bomb",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 1,
+   "dmg": 50,
+   "src": "https://example.org/test-fixture"
+  },
+  "jdam": {
+   "name": "Test GPS bomb",
+   "minKm": 0,
+   "maxKm": 24,
+   "kts": 500,
+   "seeker": "gps",
+   "profile": "bomb",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 1,
+   "dmg": 100,
+   "src": "https://example.org/test-fixture"
+  },
+  "nuke": {
+   "name": "Test depth bomb",
+   "minKm": 5,
+   "maxKm": 50,
+   "kts": 1000,
+   "seeker": "inertial",
+   "profile": "high",
+   "altMin": -600,
+   "altMax": -1,
+   "pHit": 1,
+   "dmg": 300,
+   "radiusKm": 5,
+   "cruiseM": 15000,
+   "src": "https://example.org/test-fixture"
+  },
+  "hi": {
+   "name": "Test high diver",
+   "minKm": 20,
+   "maxKm": 300,
+   "kts": 2000,
+   "seeker": "arh",
+   "profile": "high",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 1,
+   "dmg": 200,
+   "cruiseM": 20000,
+   "src": "https://example.org/test-fixture"
+  }
+ },
+ "buoys": {
+  "difar": {
+   "name": "Test DIFAR",
+   "passiveKm": 8,
+   "activeKm": 0,
+   "lifeMin": 240,
+   "src": "https://example.org/test-fixture"
+  },
+  "dicass": {
+   "name": "Test DICASS",
+   "passiveKm": 0,
+   "activeKm": 4,
+   "lifeMin": 45,
+   "src": "https://example.org/test-fixture"
+  }
+ },
+ "units": {
+  "tfrig": {
+   "hp": 100,
+   "kts": 30,
+   "cruiseKts": 15,
+   "heightM": 25,
+   "noise": 1,
+   "fc": 2,
+   "link": true,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [
+    {
+     "w": "sam",
+     "n": 20,
+     "reloadS": 8,
+     "l": 0
+    },
+    {
+     "w": "ssm",
+     "n": 4,
+     "reloadS": 8,
+     "l": 0
+    },
+    {
+     "w": "gun",
+     "n": 100,
+     "reloadS": 6
+    },
+    {
+     "w": "ltorp",
+     "n": 6,
+     "reloadS": 5
+    }
+   ],
+   "pd": [
+    {
+     "name": "Test CIWS",
+     "minKm": 0.2,
+     "maxKm": 1.5,
+     "intervalS": 4,
+     "pHit": 0.5
+    }
+   ],
+   "src": "https://example.org/test-fixture",
+   "name": "Test frigate",
+   "side": "us",
+   "cls": "ship",
+   "role": "frigate",
+   "radar": {
+    "name": "R",
+    "airKm": 300,
+    "surfKm": 60
+   },
+   "sonar": [
+    {
+     "name": "S",
+     "passiveKm": 8,
+     "activeKm": 12
+    }
+   ],
+   "deck": {
+    "slots": 2,
+    "launchS": 60
+   }
+  },
+  "tfrig2": {
+   "hp": 100,
+   "kts": 30,
+   "cruiseKts": 15,
+   "heightM": 25,
+   "noise": 1,
+   "fc": 2,
+   "link": true,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Test frigate (towed)",
+   "side": "us",
+   "cls": "ship",
+   "role": "frigate",
+   "radar": {
+    "name": "R",
+    "airKm": 300,
+    "surfKm": 60
+   },
+   "sonar": [
+    {
+     "name": "S",
+     "passiveKm": 8,
+     "activeKm": 12
+    },
+    {
+     "name": "T",
+     "passiveKm": 60,
+     "activeKm": 0,
+     "towed": true
+    }
+   ],
+   "deck": {
+    "slots": 2,
+    "launchS": 60
+   }
+  },
+  "thelo": {
+   "hp": 10,
+   "kts": 140,
+   "cruiseKts": 120,
+   "heightM": 0,
+   "noise": 0,
+   "fc": 0,
+   "link": false,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Test helo",
+   "side": "us",
+   "cls": "helo",
+   "role": "helo",
+   "minAltM": 15,
+   "maxAltM": 3000,
+   "fuelMin": 150,
+   "turnMin": 20,
+   "radar": {
+    "name": "R",
+    "airKm": 0,
+    "surfKm": 70
+   },
+   "hosts": [
+    "tfrig",
+    "tfrig2"
+   ],
+   "loadouts": {
+    "asw": [
+     {
+      "w": "ltorp",
+      "n": 2
+     }
+    ]
+   },
+   "buoys": {
+    "difar": 10,
+    "dicass": 5
+   }
+  },
+  "tjet": {
+   "hp": 10,
+   "kts": 1200,
+   "cruiseKts": 480,
+   "heightM": 0,
+   "noise": 0,
+   "fc": 1,
+   "link": true,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Test jet",
+   "side": "us",
+   "cls": "air",
+   "role": "fighter",
+   "minAltM": 60,
+   "maxAltM": 15000,
+   "fuelMin": 120,
+   "turnMin": 30,
+   "radar": {
+    "name": "R",
+    "airKm": 150,
+    "surfKm": 80
+   },
+   "hosts": [
+    "tfrig"
+   ],
+   "loadouts": {
+    "cap": [
+     {
+      "w": "aam",
+      "n": 4
+     }
+    ],
+    "strike": [
+     {
+      "w": "bomb",
+      "n": 4
+     },
+     {
+      "w": "arm",
+      "n": 2
+     },
+     {
+      "w": "jdam",
+      "n": 2
+     }
+    ]
+   }
+  },
+  "tsub": {
+   "hp": 100,
+   "kts": 28,
+   "cruiseKts": 12,
+   "heightM": 0,
+   "noise": 0.5,
+   "fc": 0,
+   "link": false,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [
+    {
+     "w": "torp",
+     "n": 10,
+     "reloadS": 20,
+     "l": 0
+    },
+    {
+     "w": "nuke",
+     "n": 2,
+     "reloadS": 20,
+     "l": 0
+    }
+   ],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Test sub",
+   "side": "us",
+   "cls": "sub",
+   "role": "sub",
+   "maxDepthM": 400,
+   "sonar": [
+    {
+     "name": "S",
+     "passiveKm": 45,
+     "activeKm": 25
+    }
+   ]
+  },
+  "tmerch": {
+   "hp": 300,
+   "kts": 16,
+   "cruiseKts": 12,
+   "heightM": 25,
+   "noise": 1.3,
+   "fc": 0,
+   "link": false,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Test merchant",
+   "side": "us",
+   "cls": "ship",
+   "role": "merchant"
+  },
+  "efrig": {
+   "hp": 100,
+   "kts": 30,
+   "cruiseKts": 15,
+   "heightM": 25,
+   "noise": 1,
+   "fc": 2,
+   "link": true,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [
+    {
+     "w": "ssm",
+     "n": 4,
+     "reloadS": 5
+    },
+    {
+     "w": "sam",
+     "n": 16,
+     "reloadS": 12
+    },
+    {
+     "w": "gun",
+     "n": 100,
+     "reloadS": 6
+    }
+   ],
+   "pd": [
+    {
+     "name": "Enemy CIWS",
+     "minKm": 0.3,
+     "maxKm": 2,
+     "intervalS": 4,
+     "pHit": 0.4
+    }
+   ],
+   "src": "https://example.org/test-fixture",
+   "name": "Enemy frigate",
+   "side": "ussr",
+   "cls": "ship",
+   "role": "surface",
+   "radar": {
+    "name": "R",
+    "airKm": 250,
+    "surfKm": 50
+   },
+   "sonar": [
+    {
+     "name": "S",
+     "passiveKm": 5,
+     "activeKm": 10
+    }
+   ]
+  },
+  "esub": {
+   "hp": 60,
+   "kts": 16,
+   "cruiseKts": 8,
+   "heightM": 0,
+   "noise": 0.5,
+   "fc": 0,
+   "link": false,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [
+    {
+     "w": "torp",
+     "n": 10,
+     "reloadS": 20,
+     "l": 0
+    }
+   ],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Enemy sub",
+   "side": "ussr",
+   "cls": "sub",
+   "role": "sub",
+   "maxDepthM": 250,
+   "sonar": [
+    {
+     "name": "S",
+     "passiveKm": 15,
+     "activeKm": 8
+    }
+   ]
+  },
+  "ejet": {
+   "hp": 10,
+   "kts": 560,
+   "cruiseKts": 430,
+   "heightM": 0,
+   "noise": 0,
+   "fc": 0,
+   "link": false,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Enemy bomber",
+   "side": "ussr",
+   "cls": "air",
+   "role": "bomber",
+   "minAltM": 100,
+   "maxAltM": 12000,
+   "fuelMin": 360,
+   "turnMin": 45,
+   "radar": {
+    "name": "R",
+    "airKm": 100,
+    "surfKm": 350
+   },
+   "hosts": [
+    "ebase"
+   ],
+   "loadouts": {
+    "asm": [
+     {
+      "w": "hi",
+      "n": 2
+     }
+    ]
+   }
+  },
+  "ebase": {
+   "hp": 400,
+   "kts": 0,
+   "cruiseKts": 0,
+   "heightM": 30,
+   "noise": 0,
+   "fc": 0,
+   "link": true,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "src": "https://example.org/test-fixture",
+   "name": "Enemy airbase",
+   "side": "ussr",
+   "cls": "base",
+   "role": "base",
+   "radar": {
+    "name": "R",
+    "airKm": 300,
+    "surfKm": 0
+   },
+   "deck": {
+    "slots": 16,
+    "launchS": 60
+   }
+  }
+ }
+}

@@ -1,0 +1,55 @@
+# Tests on every push and pull request. Builds and deploys the game to Cloudflare Pages on pushes to main,
+# once the owner has named a Pages project (repository variable CLOUDFLARE_PAGES_PROJECT) and added the two
+# secrets below. Until then the deploy job is skipped.
+name: Test, build and deploy the game
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: game-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.CLOUDFLARE_PAGES_PROJECT != ''
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          # Public values (they ship to every browser), so these are repository variables, not secrets.
+          VITE_API_BASE: ${{ vars.VITE_API_BASE }}
+          VITE_CHECKOUT_US_LATE: ${{ vars.VITE_CHECKOUT_US_LATE }}
+          VITE_CHECKOUT_USSR_LATE: ${{ vars.VITE_CHECKOUT_USSR_LATE }}
+          VITE_CHECKOUT_FULL: ${{ vars.VITE_CHECKOUT_FULL }}
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }} --branch=main

@@ -1,0 +1,12 @@
+{
+  "name": "Flag Plot",
+  "short_name": "Flag Plot",
+  "description": "A lightweight Cold War naval tactics game.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1c2c",
+  "theme_color": "#0b1c2c",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -1,0 +1,486 @@
+{
+ "note": "Simplified static game values derived from public sources (see each src URL). Not real performance data.",
+ "weapons": {
+  "ssn2c": {
+   "name": "SS-N-2C",
+   "minKm": 8,
+   "maxKm": 80,
+   "kts": 627,
+   "seeker": "arh",
+   "profile": "skim",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 0.6,
+   "dmg": 227,
+   "src": "https://en.wikipedia.org/wiki/P-15_Termit"
+  },
+  "san1": {
+   "name": "SA-N-1",
+   "minKm": 4,
+   "maxKm": 22,
+   "kts": 1980,
+   "seeker": "cmd",
+   "profile": "direct",
+   "altMin": 100,
+   "altMax": 25000,
+   "pHit": 0.45,
+   "dmg": 30,
+   "src": "https://en.wikipedia.org/wiki/M-1_Volna"
+  },
+  "san4": {
+   "name": "SA-N-4",
+   "minKm": 1.5,
+   "maxKm": 10,
+   "kts": 1584,
+   "seeker": "cmd",
+   "profile": "direct",
+   "altMin": 25,
+   "altMax": 5000,
+   "pHit": 0.5,
+   "dmg": 10,
+   "src": "https://en.wikipedia.org/wiki/9K33_Osa"
+  },
+  "ak726": {
+   "name": "AK-726 76 mm",
+   "minKm": 0.5,
+   "maxKm": 15.7,
+   "kts": 0,
+   "seeker": "none",
+   "profile": "gun",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 0.12,
+   "dmg": 4,
+   "src": "https://en.wikipedia.org/wiki/AK-726"
+  },
+  "rbu6000": {
+   "name": "RBU-6000",
+   "minKm": 0.3,
+   "maxKm": 6,
+   "kts": 0,
+   "seeker": "none",
+   "profile": "gun",
+   "altMin": -500,
+   "altMax": -5,
+   "pHit": 0.2,
+   "dmg": 40,
+   "src": "https://en.wikipedia.org/wiki/RBU-6000"
+  },
+  "set65": {
+   "name": "SET-65",
+   "minKm": 0.5,
+   "maxKm": 16,
+   "kts": 40,
+   "seeker": "acoustic",
+   "profile": "torp",
+   "altMin": -400,
+   "altMax": -5,
+   "pHit": 0.45,
+   "dmg": 205,
+   "src": "https://www.navweaps.com/Weapons/WTRussian_post-WWII.php"
+  },
+  "t5365k": {
+   "name": "53-65K",
+   "minKm": 0.5,
+   "maxKm": 19,
+   "kts": 45,
+   "seeker": "acoustic",
+   "profile": "torp",
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 0.55,
+   "dmg": 308,
+   "src": "https://en.wikipedia.org/wiki/Type_53_torpedo"
+  },
+  "ssn14": {
+   "name": "SS-N-14",
+   "minKm": 5,
+   "maxKm": 55,
+   "kts": 627,
+   "seeker": "acoustic",
+   "profile": "high",
+   "cruiseM": 400,
+   "altMin": -500,
+   "altMax": 0,
+   "pHit": 0.45,
+   "dmg": 100,
+   "src": "https://en.wikipedia.org/wiki/Metel_Anti-Ship_Complex"
+  },
+  "ssn15": {
+   "name": "SS-N-15",
+   "minKm": 10,
+   "maxKm": 45,
+   "kts": 594,
+   "seeker": "inertial",
+   "profile": "high",
+   "cruiseM": 15000,
+   "altMin": -600,
+   "altMax": -1,
+   "pHit": 0.8,
+   "dmg": 300,
+   "radiusKm": 5,
+   "src": "https://en.wikipedia.org/wiki/RPK-2_Vyuga"
+  },
+  "as5": {
+   "name": "AS-5",
+   "minKm": 20,
+   "maxKm": 200,
+   "kts": 675,
+   "seeker": "arh",
+   "profile": "high",
+   "cruiseM": 10000,
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 0.5,
+   "dmg": 500,
+   "src": "https://en.wikipedia.org/wiki/KSR-2"
+  },
+  "as6": {
+   "name": "AS-6",
+   "minKm": 40,
+   "maxKm": 400,
+   "kts": 1980,
+   "seeker": "arh",
+   "profile": "high",
+   "cruiseM": 18000,
+   "altMin": 0,
+   "altMax": 0,
+   "pHit": 0.65,
+   "dmg": 465,
+   "src": "https://en.wikipedia.org/wiki/KSR-5"
+  }
+ },
+ "buoys": {},
+ "units": {
+  "kashin": {
+   "name": "Kashin (mod.)",
+   "side": "ussr",
+   "cls": "ship",
+   "role": "surface",
+   "hp": 110,
+   "kts": 38,
+   "cruiseKts": 18,
+   "heightM": 28,
+   "noise": 1.1,
+   "radar": {
+    "name": "Angara (Head Net)",
+    "airKm": 250,
+    "surfKm": 50
+   },
+   "sonar": [
+    {
+     "name": "MGK-335 Platina",
+     "passiveKm": 5,
+     "activeKm": 10
+    }
+   ],
+   "fc": 2,
+   "link": true,
+   "chaff": 0.8,
+   "jam": 0.95,
+   "nixie": 1,
+   "mounts": [
+    {
+     "w": "ssn2c",
+     "n": 4,
+     "reloadS": 5
+    },
+    {
+     "w": "san1",
+     "n": 16,
+     "reloadS": 12
+    },
+    {
+     "w": "san1",
+     "n": 16,
+     "reloadS": 12
+    },
+    {
+     "w": "ak726",
+     "n": 100,
+     "reloadS": 6
+    },
+    {
+     "w": "rbu6000",
+     "n": 8,
+     "reloadS": 30
+    },
+    {
+     "w": "rbu6000",
+     "n": 8,
+     "reloadS": 30
+    },
+    {
+     "w": "set65",
+     "n": 5,
+     "reloadS": 20,
+     "l": 1
+    }
+   ],
+   "pd": [
+    {
+     "name": "AK-726 76 mm",
+     "minKm": 1,
+     "maxKm": 5,
+     "intervalS": 6,
+     "pHit": 0.1
+    },
+    {
+     "name": "AK-630",
+     "minKm": 0.3,
+     "maxKm": 2,
+     "intervalS": 4,
+     "pHit": 0.4
+    }
+   ],
+   "src": "https://en.wikipedia.org/wiki/Kashin-class_destroyer"
+  },
+  "krivak1": {
+   "name": "Krivak I",
+   "side": "ussr",
+   "cls": "ship",
+   "role": "surface",
+   "hp": 89,
+   "kts": 32,
+   "cruiseKts": 14,
+   "heightM": 25,
+   "noise": 1,
+   "radar": {
+    "name": "MR-310 Angara (Head Net C)",
+    "airKm": 250,
+    "surfKm": 50
+   },
+   "sonar": [
+    {
+     "name": "MG-332 Titan-2 (Bull Nose)",
+     "passiveKm": 6,
+     "activeKm": 12
+    },
+    {
+     "name": "MG-325 Vega VDS (Mare Tail)",
+     "passiveKm": 0,
+     "activeKm": 15,
+     "towed": true
+    }
+   ],
+   "fc": 2,
+   "link": true,
+   "chaff": 0.8,
+   "jam": 0.95,
+   "nixie": 0.9,
+   "mounts": [
+    {
+     "w": "ssn14",
+     "n": 4,
+     "reloadS": 5
+    },
+    {
+     "w": "san4",
+     "n": 20,
+     "reloadS": 12
+    },
+    {
+     "w": "san4",
+     "n": 20,
+     "reloadS": 12
+    },
+    {
+     "w": "ak726",
+     "n": 100,
+     "reloadS": 6
+    },
+    {
+     "w": "rbu6000",
+     "n": 4,
+     "reloadS": 30
+    },
+    {
+     "w": "rbu6000",
+     "n": 4,
+     "reloadS": 30
+    },
+    {
+     "w": "set65",
+     "n": 4,
+     "reloadS": 20,
+     "l": 1
+    },
+    {
+     "w": "t5365k",
+     "n": 4,
+     "reloadS": 20,
+     "l": 1
+    }
+   ],
+   "pd": [
+    {
+     "name": "AK-726 76 mm",
+     "minKm": 1,
+     "maxKm": 5,
+     "intervalS": 6,
+     "pHit": 0.1
+    }
+   ],
+   "src": "https://en.wikipedia.org/wiki/Krivak-class_frigate"
+  },
+  "foxtrot": {
+   "name": "Foxtrot",
+   "side": "ussr",
+   "cls": "sub",
+   "role": "sub",
+   "hp": 63,
+   "kts": 15,
+   "cruiseKts": 8,
+   "heightM": 0,
+   "noise": 0.5,
+   "maxDepthM": 280,
+   "sonar": [
+    {
+     "name": "MG-10 Feniks / MG-200 Arktika-M",
+     "passiveKm": 15,
+     "activeKm": 8
+    }
+   ],
+   "fc": 0,
+   "link": false,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 0.9,
+   "mounts": [
+    {
+     "w": "t5365k",
+     "n": 12,
+     "reloadS": 20,
+     "l": 1
+    },
+    {
+     "w": "set65",
+     "n": 10,
+     "reloadS": 20,
+     "l": 1
+    }
+   ],
+   "pd": [],
+   "src": "https://en.wikipedia.org/wiki/Foxtrot-class_submarine"
+  },
+  "victor1": {
+   "name": "Victor I",
+   "side": "ussr",
+   "cls": "sub",
+   "role": "sub",
+   "hp": 118,
+   "kts": 32,
+   "cruiseKts": 15,
+   "heightM": 0,
+   "noise": 0.7,
+   "maxDepthM": 400,
+   "sonar": [
+    {
+     "name": "MGK-300 Rubin",
+     "passiveKm": 25,
+     "activeKm": 15
+    }
+   ],
+   "fc": 0,
+   "link": false,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 0.85,
+   "mounts": [
+    {
+     "w": "t5365k",
+     "n": 8,
+     "reloadS": 20,
+     "l": 1
+    },
+    {
+     "w": "set65",
+     "n": 6,
+     "reloadS": 20,
+     "l": 1
+    },
+    {
+     "w": "ssn15",
+     "n": 4,
+     "reloadS": 20,
+     "l": 1
+    }
+   ],
+   "pd": [],
+   "src": "https://ru.wikipedia.org/wiki/%D0%9F%D0%BE%D0%B4%D0%B2%D0%BE%D0%B4%D0%BD%D1%8B%D0%B5_%D0%BB%D0%BE%D0%B4%D0%BA%D0%B8_%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%B0_671_%C2%AB%D0%81%D1%80%D1%88%C2%BB"
+  },
+  "tu16": {
+   "name": "Tu-16",
+   "side": "ussr",
+   "cls": "air",
+   "role": "bomber",
+   "hp": 10,
+   "kts": 570,
+   "cruiseKts": 430,
+   "heightM": 0,
+   "noise": 0,
+   "minAltM": 100,
+   "maxAltM": 12800,
+   "fuelMin": 360,
+   "turnMin": 45,
+   "radar": {
+    "name": "Rubin-1 (Short Horn)",
+    "airKm": 100,
+    "surfKm": 350
+   },
+   "fc": 0,
+   "link": false,
+   "chaff": 0.85,
+   "jam": 0.9,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "hosts": [
+    "airbase"
+   ],
+   "loadouts": {
+    "as5": [
+     {
+      "w": "as5",
+      "n": 2
+     }
+    ],
+    "as6": [
+     {
+      "w": "as6",
+      "n": 2
+     }
+    ]
+   },
+   "src": "https://en.wikipedia.org/wiki/Tupolev_Tu-16"
+  },
+  "airbase": {
+   "name": "Airbase",
+   "side": "ussr",
+   "cls": "base",
+   "role": "base",
+   "hp": 400,
+   "kts": 0,
+   "cruiseKts": 0,
+   "heightM": 30,
+   "noise": 0,
+   "radar": {
+    "name": "Air surveillance radar",
+    "airKm": 300,
+    "surfKm": 0
+   },
+   "fc": 0,
+   "link": true,
+   "chaff": 1,
+   "jam": 1,
+   "nixie": 1,
+   "mounts": [],
+   "pd": [],
+   "deck": {
+    "slots": 16,
+    "launchS": 60
+   },
+   "src": "https://en.wikipedia.org/wiki/Soviet_Naval_Aviation"
+  }
+ }
+}

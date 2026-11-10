@@ -1,0 +1,27 @@
+{
+  "name": "flag-plot",
+  "version": "0.1.0",
+  "description": "Lightweight Cold War naval tactics game for the browser",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "perf": "node scripts/perf.mjs",
+    "typecheck": "tsc --noEmit",
+    "data": "node scripts/build-data.mjs",
+    "e2e": "node scripts/e2e.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "puppeteer-core": "^25.17.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
+  },
+  "private": true
+}
