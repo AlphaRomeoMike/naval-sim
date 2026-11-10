@@ -16,9 +16,18 @@ const strip = (t: TierData) => JSON.stringify(t, (k, v) => (k === 'src' ? undefi
 
 describe('repository', () => {
   test('nothing private is tracked by git', () => {
-    const tracked = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n');
-    // this repository is public: no paid data, no entitlement-worker code, no internal documents, no local secrets
-    expect(tracked.filter((f) => /^premium\/|paid|^server\/|^worker\/|^notes\/|^docs\/|FABLE_PROMPT|PROGRESS\.md|ROADMAP\.md|\.dev\.vars|\.env($|\.(?!example))|\.DS_Store|^\.claude\//.test(f))).toEqual([]);
+    const tracked = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter(Boolean);
+    // This repository is public, so tracked files are an allow-list, not a block-list: a new file has to be
+    // added here on purpose. Data files are named one by one; code is allowed by folder and extension.
+    const ALLOWED = new RegExp('^(' + [
+      '\\.env\\.example', '\\.gitignore', 'README\\.md', 'index\\.html', 'package(-lock)?\\.json', 'tsconfig\\.json', 'vite\\.config\\.ts',
+      '\\.github/workflows/deploy\\.yml', 'data-src/(us|ussr)-free\\.json',
+      'public/(data/free\\.json|icon\\.svg|manifest\\.webmanifest|map/(depth\\.png|land-50m\\.json))',
+      'scripts/[\\w-]+\\.(mjs|ts)', 'src/(sim/)?[\\w-]+\\.ts', 'test/([\\w-]+(\\.test)?\\.ts|fixture\\.json)',
+    ].join('|') + ')$');
+    expect(tracked.filter((f) => !ALLOWED.test(f))).toEqual([]);
+    // the free tier holds exactly the free roster, so a paid unit cannot ride along inside an allowed file
+    expect(Object.keys(free.units).sort()).toEqual(['airbase', 'cv', 'f4j', 'ffg7e', 'foxtrot', 'kashin', 'krivak1', 'merchant', 'permit', 'sh2f', 'sturgeon', 'tu16', 'victor1']);
     // and no tracked file carries a paid unit's data: the paid ids never appear as JSON keys with a body
     if (PREMIUM) {
       const ids = [...Object.keys(us.units), ...Object.keys(su.units)];

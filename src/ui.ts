@@ -21,12 +21,18 @@ const DENY: Record<number, string> = {
   12: 'Target is below this unit\'s radar horizon.', 13: 'Flight deck is disabled.', 14: 'Deck is busy; wait for the launch interval.',
   15: 'Aircraft is still being turned around.', 16: 'No buoys of that type left.', 17: 'No deck available to recover on.',
 };
-let buoyDeep = false, lastHtml = '', pointerOnPanel = false, pendingHtml: string | null = null;
+let buoyDeep = false, lastHtml = '', pointerOnPanel = false, pendingHtml: string | null = null, dlgPaused = false;
 
 export function initUi(): void {
   $('speed').innerHTML = SPEEDS.map((s) => `<button data-s="${s}" aria-label="${s ? s + ' times speed' : 'Pause'}">${s ? s + '×' : '⏸'}</button>`).join('');
   $('speed').addEventListener('click', (e) => { const s = (e.target as HTMLElement).dataset.s; if (s !== undefined) setSpeed(Number(s)); });
   $('menuBtn').addEventListener('click', showMenu);
+  // After a mouse or touch press (detail > 0; a keyboard activation has 0) hand the keyboard back to the map,
+  // or Space and Enter would press that button again instead of pausing or setting a course.
+  document.addEventListener('click', (e) => { if (e.detail && (e.target as HTMLElement).closest('#bar button, #panel button')) $('map').focus(); });
+  // A dialog pauses a running battle; closing it (button or Esc) resumes, unless it was reopened or a new battle began.
+  const dlg = $<HTMLDialogElement>('dlg');
+  dlg.addEventListener('close', () => { if (dlg.open) return; if (dlgPaused && G.live && G.paused) setSpeed(G.speed); dlgPaused = false; });
   const panel = $('panel');
   panel.addEventListener('pointerdown', () => { pointerOnPanel = true; });
   const release = () => { pointerOnPanel = false; if (pendingHtml !== null) setPanel(pendingHtml); };
@@ -45,7 +51,7 @@ export function initUi(): void {
 // ---------- unit card ----------
 const loadoutPick: Record<number, number> = {};
 /** Forget per-battle UI choices. */
-export function resetUi(): void { for (const k in loadoutPick) delete loadoutPick[k]; lastHtml = ''; buoyDeep = false; tutStep = 0; tutFired = false; }
+export function resetUi(): void { for (const k in loadoutPick) delete loadoutPick[k]; lastHtml = ''; buoyDeep = false; tutCourse = tutClock = tutFired = false; dlgPaused = false; }
 /** One line in the on-screen log, for messages that are not sim events. */
 export function notify(text: string): void { line(text, 'warn'); }
 function setPanel(html: string): void {
@@ -57,7 +63,7 @@ function setPanel(html: string): void {
   const key = (document.activeElement as HTMLElement | null)?.dataset?.k;
   panel.hidden = !html;
   panel.innerHTML = html;
-  if (key) (panel.querySelector(`[data-k="${key}"]`) as HTMLElement | null)?.focus();
+  if (key) ((panel.querySelector(`[data-k="${key}"]`) as HTMLElement | null) ?? $('map')).focus(); // never leave focus on nothing
 }
 
 function distTo(id: number): number {
@@ -71,7 +77,7 @@ export function renderPanel(): void {
   const i = scene.info;
   if (!i || scene.sel < 0 || !G.db) { setPanel(''); return; }
   const btn = (act: string, v: number, label: string, on = false, dis = false, title = '') =>
-    `<button data-act="${act}" data-v="${v}" data-k="${act}${v}"${on ? ' class="on" aria-pressed="true"' : ''}${dis ? ' disabled' : ''}${title ? ` title="${esc(title)}"` : ''}>${label}</button>`;
+    `<button data-act="${act}" data-v="${v}" data-k="${act}${act === 'radar' || act === 'sonar' || act === 'wfree' ? '' : v}"${on ? ' class="on" aria-pressed="true"' : ''}${dis ? ' disabled' : ''}${title ? ` title="${esc(title)}"` : ''}>${label}</button>`;
   let h = `<h2>${esc(i.name)}</h2>`;
   if (!i.own) {
     h += `<div class="kv">${i.level === 2 ? 'Hostile track' : i.level === 1 ? 'Bearing only' : 'Last known position'} · ${KIND[i.kind]}</div>`;
@@ -200,7 +206,10 @@ function dialog(html: string): HTMLDialogElement {
   const d = $<HTMLDialogElement>('dlg');
   delete d.dataset.view; d.onchange = null;
   d.innerHTML = html;
-  if (!d.open) d.showModal();
+  if (!d.open) {
+    if (G.live && !G.paused && G.winner < 0) { dlgPaused = true; setSpeed(0); } // the battle waits while a dialog is up
+    d.showModal();
+  }
   focusDialog(d);
   return d;
 }
@@ -271,17 +280,17 @@ function showBrief(n: number): void {
     d.onclick = (e) => {
       const t = (e.target as HTMLElement).closest('button');
       if (!t) return;
-      if (t.dataset.side !== undefined) { side = Number(t.dataset.side); for (const k in fit) delete fit[k]; render(); }
+      if (t.dataset.side !== undefined) { side = Number(t.dataset.side); for (const k in fit) delete fit[k]; render(); ($('dlg').querySelector(`[data-side="${side}"]`) as HTMLElement).focus(); }
       else if (t.dataset.m === 'back') showMenu();
       else if (t.dataset.m === 'go') {
         closeDialog();
         // Paused, no enemy AI: the hints set the pace. A fixed seed so every first battle goes the same way
-        // (with this one the first Harpoon gets through the Krivak's guns and hits).
+        // (with this one a lone first Harpoon gets through the Krivak's guns and hits; test/scenarios.test.ts).
         if (scn.id === 'tutorial') startScenario(scn, { side: 0, ai: 0, seed: 2 });
         else { startScenario(scn, { side, fit }); setSpeed(1); }
       }
     };
-    d.onchange = (e) => { const t = e.target as HTMLSelectElement; if (t.dataset.slot !== undefined) { fit[Number(t.dataset.slot)] = t.value; render(); } };
+    d.onchange = (e) => { const t = e.target as HTMLSelectElement; if (t.dataset.slot !== undefined) { fit[Number(t.dataset.slot)] = t.value; render(); ($('dlg').querySelector(`[data-slot="${t.dataset.slot}"]`) as HTMLElement | null)?.focus(); } };
   };
   void db;
   render();
@@ -357,7 +366,7 @@ export function onKey(e: KeyboardEvent): void {
   else if (k === 'i' && scene.tgt >= 0) { const t = scene.tgt; select(t); centerOn(t); } // look at the targeted contact's card
   else if (k === 'm') showMenu(); else if (k === 'h' || k === '?') showHelp();
   else if (k === 'q' && G.live) requestSave().then((s) => { localStorage.setItem('save', JSON.stringify(s)); line('Game saved', 'own'); });
-  else if (k === 'y') loadGame();
+  else if (k === 'y') { if (!G.live || G.winner >= 0 || !localStorage.getItem('save') || confirm('Load the saved game? The battle in progress will be lost.')) loadGame(); }
   else if (k === 'Escape') { if (G.cursor || G.moveMode) { G.cursor = null; G.moveMode = false; renderPanel(); invalidate(); } else select(-1); }
   else if (i) {
     const p = find(id), s = scene.snap!;
@@ -386,23 +395,36 @@ function anySnap(test: (s: Float32Array, p: number) => boolean): boolean {
   for (let q = 0, p = SNAP_HDR; q < s[2]; q++, p += SNAP_REC) if (test(s, p)) return true;
   return false;
 }
-const TUTORIAL: { text: string; done: () => boolean }[] = [
-  { text: 'Select your frigate: click its blue circle, tap it, or press N.', done: () => !!scene.info && scene.info.own },
-  { text: 'Set a course to the east: right-click the sea (touch: press and hold), or press W, move the cursor with the arrow keys, then Enter.', done: () => !!scene.info && scene.info.wp.length > 0 },
-  { text: 'Time is paused. Start the clock and speed it up: press . a few times, or use the buttons at the top right (8× is a good pace).', done: () => !G.paused && G.speed >= 2 },
-  { text: 'Your radar sees ships out to the horizon, about 40 km. Keep steaming east until a hostile track (a red diamond) appears.', done: () => anySnap((s, p) => s[p + 2] !== scene.side && s[p + 10] === 2 && s[p + 1] === K_SHIP) },
+const ownWeaponFlying = () => anySnap((s, p) => s[p + 1] === K_WPN && s[p + 2] === scene.side);
+const myShip = () => (scene.sel >= 0 && scene.info && scene.info.own ? scene.info : null);
+const TUTORIAL: { text: string | (() => string); done: () => boolean }[] = [
+  { text: 'Select your frigate: click its blue circle, tap it, or press N.', done: () => !!myShip() },
+  { text: 'Set a course to the east: right-click the sea to the right of your ship (touch: press and hold), or press W, move the cursor right with the arrow keys, then Enter.', done: () => tutCourse },
+  { text: 'Time is paused. Start the clock and speed it up: press . a few times, or use the buttons at the top right (8× is a good pace).', done: () => tutClock },
+  { text: 'Your radar sees ships out to the horizon, about 40 km. Wait for a hostile track (a red diamond) to appear. If none does, you have sailed away from it: the enemy lies 30 km east of where you started.', done: () => anySnap((s, p) => s[p + 2] !== scene.side && s[p + 10] === 2 && s[p + 1] === K_SHIP) },
   { text: 'Contact. Make it your target: click the red diamond, or press T.', done: () => scene.tgt >= 0 },
-  { text: 'Fire a Harpoon (weapon 2, range 5 to 140 km): press 2, or the Fire button on the unit card.', done: () => anySnap((s, p) => s[p + 1] === K_WPN && s[p + 2] === scene.side) || tutFired },
-  { text: 'Missile away. It may be shot down or decoyed, so fire again if it misses. Sink the Krivak to finish.', done: () => G.winner >= 0 },
+  { text: 'Fire a Harpoon (weapon 2, range 5 to 140 km): press 2, or the Fire button on the unit card.', done: () => tutFired },
+  {
+    // the frigate's weapon 2 is the Harpoon; when they are gone the gun can still finish the job
+    text: () => (myShip()!.mounts[1]?.ammo === 0 && !ownWeaponFlying()
+      ? 'Out of Harpoons. Close to within 16 km of the Krivak and fire the 76 mm gun (weapon 3: press 3 or its Fire button) until she sinks.'
+      : 'Missile away. It may be shot down or decoyed, so fire again if it misses. Sink the Krivak to finish.'),
+    done: () => G.winner >= 0,
+  },
 ];
-let tutStep = 0, tutFired = false;
-/** Advance and show the tutorial hint. Called on every snapshot and whenever the selection changes. */
+let tutCourse = false, tutClock = false, tutFired = false; // things done once; everything else is read from the current state
+/** Show the tutorial hint for the first step that is not done. Called on every snapshot and whenever the selection changes. */
 export function tutorialTick(): void {
   const hint = $('hint');
   if (!G.scn || G.scn.id !== 'tutorial' || !G.live || G.winner >= 0) { hint.hidden = true; return; }
-  if (anySnap((s, p) => s[p + 1] === K_WPN && s[p + 2] === scene.side)) tutFired = true;
-  while (tutStep < TUTORIAL.length - 1 && TUTORIAL[tutStep].done()) tutStep++;
-  const text = `Step ${tutStep + 1} of ${TUTORIAL.length}. ${TUTORIAL[tutStep].text}`;
+  const i = myShip(), p = i ? find(scene.sel) : -1;
+  if (i && p >= 0 && i.wp.length >= 2 && i.wp[i.wp.length - 2] > scene.snap![p + 4]) tutCourse = true; // last waypoint lies to the east
+  if (!G.paused && G.speed >= 2) tutClock = true;
+  if (ownWeaponFlying()) tutFired = true;
+  // The first step not yet done, so undoing something (clearing the selection, losing the contact) brings its hint back.
+  let n = 0;
+  while (n < TUTORIAL.length - 1 && TUTORIAL[n].done()) n++;
+  const t = TUTORIAL[n].text, text = `Step ${n + 1} of ${TUTORIAL.length}. ${typeof t === 'string' ? t : t()}`;
   if (hint.textContent !== text) hint.textContent = text; // only touch the DOM (and screen readers) on a change
   hint.hidden = false;
 }

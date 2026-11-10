@@ -27,7 +27,7 @@ const mapMB = files.filter((f) => f.includes('/map/')).reduce((n, f) => n + stat
 
 // PERF_PACKS=1 also loads the paid packs (served only by this script, never part of dist) so every unit in the game is in the battle
 const havePacks = existsSync(join(root, 'premium/packs/us-late.json')); // premium assets live outside git
-if (process.env.PERF_PACKS && !havePacks) console.log('PERF_PACKS set but premium/packs is not present: measuring with the free tier only');
+if (process.env.PERF_PACKS && !havePacks) { console.error('PERF_PACKS is set but premium/packs is not present, so the paid units cannot be measured.'); process.exit(1); }
 const PACKS = process.env.PERF_PACKS && havePacks ? 'us-late,ussr-late' : '';
 const server = await serve(dist, { isolate: true, mounts: { '/__packs/': join(root, 'premium/packs') } }); // cross-origin isolation gives the worker a 5 microsecond timer instead of 100
 const url = `${server.url}?stress=${UNITS}&speed=64${PACKS ? '&packs=' + PACKS : ''}`;

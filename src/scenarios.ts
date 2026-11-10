@@ -66,12 +66,14 @@ export const SCENARIOS: Scenario[] = [
     ],
   },
   {
-    id: 'tutorial', name: 'Tutorial: First Watch', lon: -30, lat: 45, layerM: 100, minutes: 300, timeoutWinner: 'ussr', // five hours: nobody should lose the tutorial to the clock
-    brief: 'A ten-minute guided first battle. You command one frigate in the open Atlantic; a lone Soviet frigate is somewhere to the east.\n' +
+    // Built so it cannot be lost or made unwinnable: no time limit, the enemy is stopped inside radar range and
+    // never shoots first (no AI), and she is damaged enough that the 76 mm gun alone can finish her.
+    id: 'tutorial', name: 'Tutorial: First Watch', lon: -30, lat: 45, layerM: 100, minutes: 0, timeoutWinner: 'ussr',
+    brief: 'A ten-minute guided first battle. You command one frigate in the open Atlantic; a damaged Soviet frigate lies stopped about 30 km to the east.\n' +
       'The yellow box at the top tells you what to do next. Everything can be done with the mouse, by touch, or with the keyboard alone.',
     units: [
       { side: 'us', type: 'ffg7e', name: 'Your frigate', lon: -30, lat: 45, kts: 20, obj: true, air: [{ type: 'sh2f', n: 1, loadout: 'asw' }] },
-      { side: 'ussr', type: 'krivak1', name: 'Krivak I', lon: -29.39, lat: 45, kts: 8, obj: true, wp: [[-30.2, 45.0], [-29.39, 45.0]] },
+      { side: 'ussr', type: 'krivak1', name: 'Krivak I', lon: -29.62, lat: 45, kts: 0, hp: 12, obj: true },
     ],
   },
 ];

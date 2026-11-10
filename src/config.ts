@@ -3,7 +3,7 @@
 const env = import.meta.env;
 
 /** Base URL of the entitlement worker. */
-export const API: string = env.VITE_API_BASE || 'http://127.0.0.1:8787';
+export const API: string = env.VITE_API_BASE || (env.DEV ? 'http://127.0.0.1:8787' : ''); // '' = a hosted build with no store yet
 
 export interface Pack { id: string; name: string; price: string; grants: string[]; blurb: string; checkout: string }
 

@@ -183,6 +183,7 @@ export function showStore(back?: () => void): void {
     if (t.dataset.buy) buy(PACKS.find((p) => p.id === t.dataset.buy)!);
     else if (t.dataset.m === 'restore') {
       const key = (document.getElementById('restoreKey') as HTMLInputElement).value.trim(), email = (document.getElementById('restoreEmail') as HTMLInputElement).value.trim();
+      if (!API) { store.status = 'The store is not open yet.'; render(); return; }
       try {
         if (key) store.status = (await restore(key)) ? 'Packs restored on this device.' : 'That licence key was not recognised.';
         else if (email) {

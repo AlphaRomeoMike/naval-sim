@@ -139,3 +139,31 @@ describe('free scenarios', () => {
     expect(r.wins).toBeGreaterThan(r.idle);
   });
 });
+
+describe('tutorial', () => {
+  // units: 0 the player's frigate, 1 its SH-2F (on deck), 2 the Krivak. Started as the game starts it: no AI, seed 2.
+  const tut = byId('tutorial');
+  test('cannot be lost by waiting or sailing away: the Krivak is tracked from the start and there is no time limit', async () => {
+    const s = await start(tut, 2, 0);
+    for (let i = 0; i < 40; i++) step(s);
+    expect(s.det[2]).toBe(2); // a US track within 20 s, without moving
+    ord(s, O_MOVE, 0, -400, 300); // then steam off to the north-west for twelve hours
+    for (let i = 0; i < 12 * 3600 * 2; i++) step(s);
+    expect(s.winner).toBe(-1);
+  });
+  test('a lone Harpoon fired from where the player starts sinks the Krivak', async () => {
+    const s = await start(tut, 2, 0);
+    for (let i = 0; i < 40; i++) step(s);
+    expect(ord(s, O_FIRE, 0, mountOf(s, 0, 'harpoon'), 2)).toBe(0);
+    for (let i = 0; i < 2000 && s.winner < 0; i++) step(s);
+    expect(s.winner).toBe(0);
+  });
+  test('with every Harpoon withheld, the gun alone sinks her from inside 16 km, whatever the seed', async () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const s = await start(tut, seed, 0);
+      ord(s, O_MOVE, 0, s.x[2] - 10, s.y[2]);
+      for (let i = 0; i < 20000 && s.winner < 0; i++) { if (dist(s, 0, 2) < 15) ord(s, O_FIRE, 0, mountOf(s, 0, 'mk75'), 2); step(s); }
+      expect(s.winner, `seed ${seed}`).toBe(0);
+    }
+  });
+});

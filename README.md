@@ -41,7 +41,8 @@ field. They are not real performance data.
 The game can unlock paid unit packs (`src/store.ts`, `src/config.ts`). The packs' data is **not** in this
 repository and is never part of the build: it is delivered by a separate entitlement service to players who
 own a pack, and kept in the browser's storage for offline play. Everything here works without it. A test
-(`test/data.test.ts`) fails if paid data or anything else private is ever committed.
+(`test/data.test.ts`) allows only a fixed list of tracked files and the exact free roster, so a stray file or
+an extra unit fails the build.
 
 ## Hosting
 

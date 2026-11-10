@@ -55,7 +55,7 @@ await check('boot: menu lists the free scenarios, no errors', async () => {
   return `${n} scenarios`;
 });
 
-await check('keyboard: select, set course, change speed, pause', async () => {
+await check('keyboard: select, set course, change speed, pause; focus after clicks and toggles; dialogs pause', async () => {
   const page = await open();
   await startFromMenu(page, 2);
   await page.focus('#map');
@@ -71,6 +71,23 @@ await check('keyboard: select, set course, change speed, pause', async () => {
   await page.keyboard.press('Space');
   const paused1 = await g(page, () => window.__game.G.paused);
   assert(paused0 !== paused1, 'Space did not toggle pause');
+  // a mouse click on a button must not keep the keyboard: after clicking 8x, Space pauses and the radar toggle keeps focus usable
+  await page.click('#speed button[data-s="8"]');
+  assert(!(await g(page, () => window.__game.G.paused)), '8x button did not start the clock');
+  await page.keyboard.press('Space');
+  assert(await g(page, () => window.__game.G.paused), 'Space after a mouse click on 8x did not pause');
+  await page.click('#speed button[data-s="8"]');
+  // a dialog pauses the battle and closing it resumes
+  await page.keyboard.press('m');
+  await page.waitForSelector('#dlg[open]');
+  assert(await g(page, () => window.__game.G.paused), 'the menu did not pause the battle');
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.getElementById('dlg').open && !window.__game.G.paused, { timeout: 5000 });
+  // toggling a card button from the keyboard leaves the keyboard on that button
+  await page.focus('#panel button[data-act="wfree"]');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('#panel button[data-act="wfree"]').getAttribute('aria-pressed') !== 'true', { timeout: 5000 });
+  assert(await g(page, () => document.activeElement?.dataset?.act === 'wfree'), 'focus left the Auto-defend button after toggling it');
   assert(page.errors.length === 0, page.errors.join('; '));
   await page.close();
 });
@@ -183,9 +200,12 @@ await check('offline: after one visit the game loads and plays with the network 
     const keys = await caches.keys();
     if (!keys.length) return false;
     const have = (await (await caches.open(keys[0])).keys()).map((r) => new URL(r.url).pathname);
-    return ['/data/free.json', '/map/depth.png', '/map/land-50m.json', '/index.html'].every((f) => have.includes(f)) && have.some((f) => /worker.*\.js$/.test(f));
+    return ['/data/free.json', '/map/depth.png', '/map/land-50m.json', '/'].every((f) => have.includes(f)) && have.some((f) => /worker.*\.js$/.test(f));
   }, { timeout: 30000, polling: 250 });
   const cached = await g(page, async () => (await (await caches.open((await caches.keys())[0])).keys()).length);
+  // Stop the server as well: offline mode alone does not block requests made by the service worker itself,
+  // so a file missing from the cache would be fetched quietly and the check would still pass.
+  await server.close();
   await page.setOfflineMode(true);
   const warnings = [];
   page.on('console', (m) => { if (m.type() === 'warn' || m.type() === 'error') warnings.push(m.text()); });
@@ -204,7 +224,7 @@ await check('offline: after one visit the game loads and plays with the network 
 });
 
 await browser.close();
-await server.close();
+await server.close(); // already stopped if the offline check ran; closing twice is harmless
 const failed = results.filter((r) => !r[0]).length;
 console.log(`\n${results.length - failed} of ${results.length} end-to-end checks passed`);
 process.exit(failed ? 1 : 0);

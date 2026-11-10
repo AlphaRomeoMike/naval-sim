@@ -108,10 +108,11 @@ export interface ScnAir { type: string; n: number; loadout?: string }
 export interface ScnUnit {
   side: 'us' | 'ussr'; type: string; name?: string; lon: number; lat: number;
   alt?: number; kts?: number; wp?: [number, number][]; air?: ScnAir[]; obj?: boolean; loadout?: string;
+  hp?: number; // starts damaged, with this many hit points (never more than the type has)
 }
 export interface Scenario {
   id: string; name: string; brief: string; lon: number; lat: number;
-  layerM: number; minutes: number; timeoutWinner: 'us' | 'ussr'; units: ScnUnit[];
+  layerM: number; minutes: number; timeoutWinner: 'us' | 'ussr'; units: ScnUnit[]; // minutes 0 = no time limit
   tutorial?: string[];
 }
 
@@ -309,7 +310,7 @@ function fitted(db: Db, fit: Record<number, string> | undefined, slot: number, t
 
 export function resetSim(s: Sim, db: Db, scn: Scenario, seed: number, fit?: Record<number, string>): Sim {
   s.db = db; s.scn = scn; s.tick = 0; s.seed = seed | 0; s.n = 0; s.winner = -1; s.evN = 0; s.aiSides = 0;
-  s.endTick = Math.round((scn.minutes * 60) / DT);
+  s.endTick = scn.minutes > 0 ? Math.round((scn.minutes * 60) / DT) : 0x7fffffff;
   s.layer = scn.layerM; s.lon0 = scn.lon; s.lat0 = scn.lat;
   // one-off projection constant; rounded so engines whose cos() differs in the last bit still agree exactly
   s.kx = Math.round(111.32 * Math.cos((scn.lat * Math.PI) / 180) * 1e6) / 1e6;
@@ -332,6 +333,7 @@ export function resetSim(s: Sim, db: Db, scn: Scenario, seed: number, fit?: Reco
     const i = spawnUnit(s, ui, x, y, alt);
     s.label[i] = s.names.push(su.name || u.d.name);
     s.obj[i] = su.obj ? 1 : 0;
+    if (su.hp !== undefined && su.hp < s.hp[i]) s.hp[i] = su.hp;
     if (su.kts !== undefined) s.ordSpd[i] = Math.min(su.kts * KTS, u.maxKmps);
     if (su.wp) {
       s.flags[i] |= F_LOOP;
