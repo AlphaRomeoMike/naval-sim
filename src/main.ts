@@ -118,8 +118,8 @@ worker.onmessage = (e: MessageEvent) => {
     if (scene.tgt >= 0 && (pt < 0 || s[pt + 12] !== scene.tgtGen)) setTarget(-1);
     updateClock();
     logEvents(s);
-    tutorialTick();
     if (s[1] >= 0 && G.winner < 0) { G.winner = s[1]; showResult(G.winner); }
+    tutorialTick(); // after the result is known, so the last hint is cleared with the final snapshot
     invalidate();
   } else if (m.t === 'ready') {
     G.labels = m.labels; G.live = true; G.winner = -1;

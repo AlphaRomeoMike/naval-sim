@@ -275,7 +275,9 @@ function showBrief(n: number): void {
       else if (t.dataset.m === 'back') showMenu();
       else if (t.dataset.m === 'go') {
         closeDialog();
-        if (scn.id === 'tutorial') startScenario(scn, { side: 0, ai: 0 }); // paused, no enemy AI: the hints set the pace
+        // Paused, no enemy AI: the hints set the pace. A fixed seed so every first battle goes the same way
+        // (with this one the first Harpoon gets through the Krivak's guns and hits).
+        if (scn.id === 'tutorial') startScenario(scn, { side: 0, ai: 0, seed: 2 });
         else { startScenario(scn, { side, fit }); setSpeed(1); }
       }
     };
