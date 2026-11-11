@@ -9,6 +9,7 @@ import {
 import { G, scene, view, order, select, setTarget, setSpeed, startScenario, requestSave, invalidate, pan, zoomAt, centerOn, find, moveTo } from './main';
 import { SCENARIOS } from './scenarios';
 import { showStore } from './store';
+import { say, bearing, hush, toggleVoice } from './voice';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
@@ -60,7 +61,7 @@ export function initUi(): void {
 // ---------- unit card ----------
 const loadoutPick: Record<number, number> = {};
 /** Forget per-battle UI choices. */
-export function resetUi(): void { for (const k in loadoutPick) delete loadoutPick[k]; lastHtml = ''; buoyDeep = false; ringHover = ringPin = ''; tutCourse = tutClock = tutFired = false; dlgPaused = false; flightSize = 1; closeMenu(false); }
+export function resetUi(): void { for (const k in loadoutPick) delete loadoutPick[k]; lastHtml = ''; buoyDeep = false; ringHover = ringPin = ''; tutCourse = tutClock = tutFired = false; dlgPaused = false; flightSize = 1; closeMenu(false); hush(); }
 /** One line in the on-screen log, for messages that are not sim events. */
 export function notify(text: string): void { line(text, 'warn'); }
 function setPanel(html: string): void {
@@ -325,6 +326,43 @@ function line(text: string, cls: string): void {
   log.appendChild(li);
   while (log.children.length > 7) log.firstElementChild!.remove();
 }
+/** True bearing in whole degrees to contact id, from the selected own unit or else our nearest one; -1 if unknown.
+ *  A bearing-only contact carries its own direction from the sensor that hears it. */
+function bearingTo(s: Float32Array, id: number): number {
+  const deg = (x: number, y: number) => (Math.round((Math.atan2(x, y) * 180) / Math.PI) + 360) % 360; // y is north
+  const t = find(id);
+  if (t < 0) return -1;
+  if (s[t + 10] === 1) return deg(s[t + 6], s[t + 7]);
+  let o = scene.sel >= 0 ? find(scene.sel) : -1;
+  if (o < 0 || s[o + 10] !== 3) {
+    o = -1;
+    for (let q = 0, p = SNAP_HDR, best = Infinity; q < s[2]; q++, p += SNAP_REC) {
+      if (s[p + 10] !== 3 || s[p + 1] === K_WPN || s[p + 1] === K_BUOY) continue;
+      const d = (s[p + 4] - s[t + 4]) ** 2 + (s[p + 5] - s[t + 5]) ** 2;
+      if (d < best) { best = d; o = p; }
+    }
+  }
+  return o < 0 ? -1 : deg(s[t + 4] - s[o + 4], s[t + 5] - s[o + 5]);
+}
+const CONTACT_CLIP: Record<number, string> = { [K_SUB]: 'sonar/sonar-contact', [K_AIR]: 'air/bogey', [K_SHIP]: 'air/surface-contact' };
+function speak(s: Float32Array, k: number, a: number, b: number, c: number, me: number): void {
+  const prof = (d: number) => G.db!.weapons[d]?.d.profile;
+  switch (k) {
+    case E_CONTACT: if (CONTACT_CLIP[c]) say([CONTACT_CLIP[c], ...bearing(c === K_SUB ? 'sonar' : 'air', bearingTo(s, a))]); break;
+    case E_LOST: if (CONTACT_CLIP[c]) say([c === K_SUB ? 'sonar/contact-lost' : 'air/contact-lost']); break;
+    case E_LAUNCH:
+      if (c === me) say([prof(b) === 'torp' ? 'sonar/torpedo-away' : 'air/missile-away']);
+      else if (prof(b) === 'torp') say(['sonar/torpedo', ...bearing('sonar', bearingTo(s, a))], true);
+      else if (prof(b) === 'skim' || prof(b) === 'high') say(['air/vampire', ...bearing('air', bearingTo(s, a))], true);
+      else say(['air/hostile-launch', ...bearing('air', bearingTo(s, a))]);
+      break;
+    case E_HIT: if (c >> 16 === me && !(c & 0x8000)) say(['conn/hit'], true); break;
+    case E_KILL: if (c >> 16 !== me) say(['conn/target-destroyed']); break;
+    case E_PD: if (c >> 16 === me) say(['air/splash']); break;
+    case E_AGROUND: say(['conn/aground'], true); break;
+    case E_BINGO: say(['air/bingo']); break;
+  }
+}
 export function logEvents(s: Float32Array): void {
   const ne = s[3];
   if (!ne || !G.db) return;
@@ -333,6 +371,7 @@ export function logEvents(s: Float32Array): void {
   const who = (a: number, c: number) => (c & 0x8000 ? wn(c & 0x7fff) : c >> 16 === me ? nm(a) : un(c & 0x7fff));
   for (let e = 0, p = SNAP_HDR + s[2] * SNAP_REC; e < ne; e++, p += 4) {
     const k = s[p], a = s[p + 1], b = s[p + 2], c = s[p + 3];
+    if (G.winner < 0) speak(s, k, a, b, c, me);
     switch (k) {
       case E_CONTACT: line(`New contact: ${KIND[c]}${b === 1 ? ' (bearing only)' : ''}`, 'foe'); break;
       case E_LOST: line(`Contact lost: ${KIND[c]}`, ''); break;
@@ -465,7 +504,7 @@ const KEYS: [string, string][] = [
   ['N / P', 'Next / previous own unit'], ['T / Shift+T', 'Next / previous hostile track as target'], ['I', 'Show the targeted contact (N returns to your units)'], ['C', 'Centre on the selected unit'],
   ['W, then arrows, Enter', 'Set course with the cursor (Shift+Enter adds a waypoint, Esc cancels)'], ['Delete', 'Clear the course (stop)'], ['S / X', 'Speed up / down'], ['A / Z', 'Climb or come shallower / descend or go deeper'],
   ['R / O / F', 'Radar / active sonar / auto-defend on or off'], ['1 – 8', 'Fire weapon 1–8 at the target'], ['L', 'Launch the next ready aircraft (or flight)'], ['B', 'Aircraft: return to its deck (a leader takes its formation)'], ['G', 'Unit menu: speed and formation (arrows, Enter, Esc)'],
-  ['D / E / V', 'Drop sonobuoy type 1 / 2 / 3 (hold Shift to set it below the layer)'], ['Q / Y', 'Quick save / quick load'], ['M', 'Menu'], ['H or ?', 'This help'], ['Esc', 'Close a dialog or clear the selection'],
+  ['D / E / V', 'Drop sonobuoy type 1 / 2 / 3 (hold Shift to set it below the layer)'], ['Q / Y', 'Quick save / quick load'], ['U', 'Voice callouts on / off'], ['M', 'Menu'], ['H or ?', 'This help'], ['Esc', 'Close a dialog or clear the selection'],
 ];
 export function showHelp(): void {
   const d = dialog(`<h1>How to play</h1>
@@ -523,6 +562,7 @@ export function onKey(e: KeyboardEvent): void {
   else if (k === 't') cycle(false, e.shiftKey ? -1 : 1);
   else if (k === 'c') centerOn(id);
   else if (k === 'i' && scene.tgt >= 0) { const t = scene.tgt; select(t); centerOn(t); } // look at the targeted contact's card
+  else if (k === 'u') line(`Voice callouts ${toggleVoice() ? 'on' : 'off'}`, 'own');
   else if (k === 'm') showMenu(); else if (k === 'h' || k === '?') showHelp();
   else if (k === 'q' && G.live) requestSave().then((s) => { localStorage.setItem('save', JSON.stringify(s)); line('Game saved', 'own'); });
   else if (k === 'y') { if (!G.live || G.winner >= 0 || !localStorage.getItem('save') || confirm('Load the saved game? The battle in progress will be lost.')) loadGame(); }

@@ -10,7 +10,8 @@
     "perf": "node scripts/perf.mjs",
     "typecheck": "tsc --noEmit",
     "data": "node scripts/build-data.mjs",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "voice": "node scripts/make-voice.mjs"
   },
   "keywords": [],
   "author": "",
