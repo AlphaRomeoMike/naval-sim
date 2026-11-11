@@ -49,8 +49,8 @@ an extra unit fails the build.
 The build is static. Any HTTPS static host works (HTTPS is needed for offline play).
 
 Link previews and search: `index.html` carries the Open Graph tags, a canonical address and structured data;
-`public/og.png` is the preview picture (`node scripts/og-image.mjs` redraws it), and `public/robots.txt` and
-`public/sitemap.xml` are for search engines. These need absolute addresses, so the site's address is written
+`public/og.png` is the preview picture (`node scripts/og-image.mjs` redraws it), and `public/robots.txt`,
+`public/sitemap.xml` and `public/google*.html` (Google Search Console's ownership check) are for search engines. These need absolute addresses, so the site's address is written
 out in those three places: change it there if the game moves to another domain.
 
 Build-time settings, all public (they ship to the browser): copy `.env.example` to `.env.production` and set
