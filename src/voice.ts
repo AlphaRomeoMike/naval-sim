@@ -23,9 +23,14 @@ async function run(): Promise<void> {
   playing = false; cur = null;
 }
 
-/** Queue a callout. Urgent ones go next; routine ones are dropped while a backlog builds up (fast time). */
+const SAME_MS = 5000; // the same alert again within 5 s (a salvo, several contacts at once) is spoken once
+const last = new Map<string, number>();
+/** Queue a callout, keyed by its first clip. Urgent ones go next; routine ones are dropped while a backlog builds up (fast time). */
 export function say(clips: string[], urgent = false): void {
   if (!on) return;
+  const now = performance.now();
+  if (now - (last.get(clips[0]) ?? -Infinity) < SAME_MS) return;
+  last.set(clips[0], now);
   if (urgent) q.unshift(clips); else if (q.length < 2) q.push(clips); else return;
   run();
 }
@@ -33,7 +38,7 @@ export function say(clips: string[], urgent = false): void {
 export function bearing(station: string, deg: number): string[] {
   return deg < 0 ? [] : [`${station}/bearing`, ...String(deg).padStart(3, '0').split('').map((d) => `${station}/${d}`)];
 }
-export function hush(): void { gen++; q.length = 0; cur?.pause(); done?.(); } // a paused clip never ends: release the player
+export function hush(): void { gen++; q.length = 0; last.clear(); cur?.pause(); done?.(); } // a paused clip never ends: release the player
 export function toggleVoice(): boolean {
   on = !on;
   try { localStorage.setItem('voice', on ? '1' : '0'); } catch { /* private mode: setting lasts this visit */ }
