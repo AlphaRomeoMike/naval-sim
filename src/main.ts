@@ -10,7 +10,7 @@ import './sim/all';
 import { SCENARIOS, stress } from './scenarios';
 import { decodeGrayPng } from './sim/depth';
 import { initStore, ownedTiers, refreshStoreDialog, store } from './store';
-import { initUi, renderPanel, logEvents, showMenu, showResult, onKey, tutorialTick, notify, resetUi } from './ui';
+import { initUi, renderPanel, logEvents, showMenu, showResult, onKey, tutorialTick, notify, resetUi, unitMenu, ringsOf } from './ui';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);
@@ -91,7 +91,7 @@ export function setSpeed(x: number): void {
 }
 export function select(id: number): void {
   const p = id >= 0 ? find(id) : -1;
-  scene.sel = p >= 0 ? id : -1; scene.selGen = p >= 0 ? scene.snap![p + 12] : 0; scene.info = null;
+  scene.sel = p >= 0 ? id : -1; scene.selGen = p >= 0 ? scene.snap![p + 12] : 0; scene.info = null; scene.rings = [];
   G.lastDeny = '';
   if (scene.sel < 0) scene.tgt = -1;
   send({ t: 'sel', id: scene.sel });
@@ -126,7 +126,7 @@ worker.onmessage = (e: MessageEvent) => {
     scene.sel = -1; scene.tgt = -1;
     $('scnName').textContent = G.scn!.name;
     renderPanel();
-  } else if (m.t === 'info') { scene.info = m.info as Info | null; renderPanel(); invalidate(); }
+  } else if (m.t === 'info') { scene.info = m.info as Info | null; scene.rings = ringsOf(scene.info); renderPanel(); invalidate(); }
   else if (m.t === 'save') { G.lastHash = m.hash; pendingSave?.(m.save); pendingSave = null; }
   else if (m.t === 'perf') { pendingPerf?.(m); pendingPerf = null; }
   else if (m.t === 'deny') { G.lastDeny = m.r; renderPanel(); }
@@ -194,10 +194,12 @@ export function moveTo(wx: number, wy: number, append: boolean): void {
 }
 function click(sx: number, sy: number, alt: boolean, shift: boolean): void {
   const wx = view.x + (sx - view.w / 2) / view.z, wy = view.y - (sy - view.h / 2) / view.z;
+  const id = G.moveMode ? -1 : pick(sx, sy);
+  const p = id >= 0 ? find(id) : -1, own = p >= 0 && scene.snap![p + 10] === 3 && scene.snap![p + 2] === scene.side;
+  // right-click or long press: on one of your units it opens that unit's menu, anywhere else it sets a course
+  if (alt && own && G.winner < 0) { unitMenu(id, sx, sy); return; }
   if (alt || G.moveMode) { moveTo(wx, wy, shift); return; }
-  const id = pick(sx, sy);
   if (id < 0) return;
-  const p = find(id), own = scene.snap![p + 10] === 3 && scene.snap![p + 2] === scene.side;
   if (own || scene.sel < 0 || !scene.info?.own) select(id);
   else setTarget(id);
 }

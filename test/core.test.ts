@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
   allocSim, applyOrder, finishSetup, hash, replay, resetSim, step, MAX, KTS, SCRATCH, K_FREE, K_WPN, K_BUOY,
-  O_MOVE, O_ADDWP, O_SPEED, O_ALT, O_RADAR, O_SONAR, O_WFREE, O_STOP, O_FIRE, O_LAUNCH, O_RTB, O_BUOY, type Save, type Sim,
+  O_MOVE, O_ADDWP, O_SPEED, O_ALT, O_RADAR, O_SONAR, O_WFREE, O_STOP, O_FIRE, O_LAUNCH, O_RTB, O_BUOY, O_JOIN, O_FORM, type Save, type Sim,
 } from '../src/sim/sim';
 import { stress } from '../src/scenarios';
 import { at, db, make, run, tier } from './helpers';
@@ -64,7 +64,7 @@ describe('save and load', () => {
     // a scripted player issuing every kind of order, valid or not, across the whole battle
     let r = 99;
     const rnd = () => { r = (Math.imul(r, 1103515245) + 12345) | 0; return ((r >>> 8) & 0xffff) / 0x10000; };
-    const KINDS = [O_MOVE, O_ADDWP, O_SPEED, O_ALT, O_RADAR, O_SONAR, O_WFREE, O_STOP, O_FIRE, O_FIRE, O_LAUNCH, O_RTB, O_BUOY];
+    const KINDS = [O_MOVE, O_ADDWP, O_SPEED, O_ALT, O_RADAR, O_SONAR, O_WFREE, O_STOP, O_FIRE, O_FIRE, O_LAUNCH, O_RTB, O_BUOY, O_JOIN, O_FORM];
     const orders: number[][] = [], used = new Set<number>();
     const TICKS = 4000, MID = 1500;
     let midHash = 0, midSave: Save | null = null;
@@ -76,7 +76,9 @@ describe('save and load', () => {
           : k === O_SPEED ? [a.tick, k, u, rnd() * 40, 0, 0]
           : k === O_ALT ? [a.tick, k, u, (rnd() - 0.3) * 5000, 0, 0]
           : k === O_FIRE ? fireOrder(a, u, (rnd() * a.n) | 0)
-          : k === O_LAUNCH ? [a.tick, k, pick(a, u, (i) => a.kind[i] === 3 && (a.flags[i] & 8) !== 0), (rnd() * 3) | 0, 0, 0]
+          : k === O_LAUNCH ? [a.tick, k, pick(a, u, (i) => a.kind[i] === 3 && (a.flags[i] & 8) !== 0), (rnd() * 3) | 0, rnd() < 0.5 ? 0 : 1 + ((rnd() * a.n) | 0), 0] // half of them as a flight
+          : k === O_JOIN ? [a.tick, k, u, rnd() < 0.3 ? -1 : pick(a, (rnd() * a.n) | 0, (i) => i !== u && a.kind[i] === a.kind[u] && a.side[i] === a.side[u]), 0, 0]
+          : k === O_FORM ? [a.tick, k, u, (rnd() * 4) | 0, 0, 0]
           : k === O_RTB ? [a.tick, k, pick(a, u, (i) => a.kind[i] === 3 && !(a.flags[i] & 8)), 0, 0, 0]
           : k === O_BUOY ? [a.tick, k, pick(a, u, (i) => a.kind[i] === 3 && !(a.flags[i] & 8) && a.buoyN[i * 4] > 0), (rnd() * 2) | 0, (rnd() * 2) | 0, 0]
           : [a.tick, k, u, rnd() < 0.5 ? 1 : 0, 0, 0];

@@ -137,6 +137,80 @@ await check('aircraft: launch from the unit card, drop a buoy, order it home (ke
   await page.close();
 });
 
+await check('unit menu and flights: right-click menu, G key, launch a flight of three, change formation and speed', async () => {
+  const page = await open();
+  await startFromMenu(page, 1); // Bomber Stream: a carrier with eight fighters
+  const idOf = (name) => g(page, (n) => Number(Object.entries(window.__game.G.labels).find((e) => e[1] === n)[0]), name);
+  const at = (id) => g(page, (u) => { const G = window.__game, s = G.scene.snap; for (let q = 0, p = 8; q < s[2]; q++, p += 16) if (s[p] === u) return { x: (s[p + 4] - G.view.x) * G.view.z + G.view.w / 2, y: G.view.h / 2 - (s[p + 5] - G.view.y) * G.view.z, lead: s[p + 15], kts: s[p + 13] }; return null; }, id);
+  const cv = await idOf('Carrier');
+  // right-click the carrier: its menu opens with the four ship speeds and the keyboard on the first; Esc puts it away
+  const c = await at(cv);
+  await page.mouse.click(c.x, c.y, { button: 'right' });
+  await page.waitForSelector('#ctx:not([hidden]) button[data-a="spd"]');
+  const menu = await g(page, () => ({ items: [...document.querySelectorAll('#ctx button')].map((b) => b.textContent), focus: document.activeElement.textContent, sel: window.__game.scene.sel }));
+  assert(menu.items.length === 4 && /Stop/.test(menu.items[0]) && /Full · 32 kts/.test(menu.items[3]), 'carrier menu items: ' + menu.items.join(' | '));
+  assert(menu.sel === cv && /Stop/.test(menu.focus), `selection ${menu.sel}, focus "${menu.focus}"`);
+  await page.keyboard.press('Escape');
+  assert(await g(page, () => document.getElementById('ctx').hidden && document.activeElement.id === 'map' && window.__game.scene.sel >= 0), 'Esc did not close the menu and return to the map');
+  // range circles appear only while a card row is pointed at (or its button has the keyboard), and are named
+  await page.waitForFunction(() => window.__game.scene.info && window.__game.scene.info.hangar.length === 8);
+  const rings = () => g(page, () => window.__game.scene.rings.map((r) => r.label).join(' | '));
+  assert((await rings()) === '', 'circles shown with nothing pointed at: ' + (await rings()));
+  await page.hover('#panel .w[data-ring="w0"]');
+  assert(/^RIM-7E · 1\.5–15 km \| RIM-7E · not inside 1\.5 km$/.test(await rings()), 'weapon circles: ' + (await rings()));
+  await page.hover('#panel .w[data-ring="af4j"]');
+  assert(/^F-4J\/S · can fly 830 km out and still get back$/.test(await rings()), 'aircraft circle: ' + (await rings()));
+  await page.mouse.move(300, 300);
+  assert((await rings()) === '', 'circles stayed after the pointer left: ' + (await rings()));
+  await page.focus('#panel .w[data-ring="af4j"] select'); // keyboard: the row that holds the focus
+  assert(/^F-4J\/S · can fly 830 km/.test(await rings()), 'no circle for the focused row: ' + (await rings()));
+  await page.focus('#map');
+  assert((await rings()) === '', 'circles stayed after the focus left: ' + (await rings()));
+  // before any launch the card says how far the fighters go and what the chosen loadout carries, with ranges
+  const card = await page.$eval('#panel', (p) => p.textContent);
+  assert(/F-4J\/S can fly 830 km out and still get back/.test(card) && /4× AIM-7F \(air, 2–70 km\), 4× AIM-9H \(air, 1–18 km\)/.test(card), 'card lacks aircraft reach or loadout ranges');
+  await page.select('#panel select[data-lo]', '3'); // strike-82
+  await page.waitForFunction(() => /12× Mk 82 bomb \(surface, 3 km\)/.test(document.getElementById('panel').textContent), { timeout: 5000 });
+  await page.select('#panel select[data-lo]', '1');
+  assert(/Right-click/.test(await page.$eval('#hud', (h) => h.textContent)), 'no hint line');
+  // a flight of three: the first goes at once, the others wait for the deck, then follow the first
+  await page.select('#panel select[data-k="flight"]', '3');
+  await page.click('#panel button[data-act="launch"]');
+  await page.waitForFunction(() => { const h = window.__game.scene.info.hangar; return !h[0].stowed && h[1].queued && h[2].queued && !h[3].queued; }, { timeout: 5000 });
+  assert(/waiting for the deck/.test(await page.$eval('#panel', (p) => p.textContent)), 'the card does not say the others are waiting');
+  await g(page, () => window.__game.setSpeed(16));
+  await page.waitForFunction(() => window.__game.scene.info.hangar.filter((h) => !h.stowed).length === 3, { timeout: 30000 });
+  const [lead, w1, w2] = await g(page, () => window.__game.scene.info.hangar.slice(0, 3).map((h) => h.id));
+  assert((await at(w1)).lead === lead && (await at(w2)).lead === lead && (await at(lead)).lead === -1, 'the wingmen do not follow the first aircraft');
+  await g(page, () => window.__game.setSpeed(0)); // paused, so the card is not redrawn under the scripted clicks below
+  // G opens the leader's menu: it has the formation shapes; pick Column with the mouse
+  await g(page, (id) => window.__game.select(id), lead);
+  await page.waitForFunction((id) => window.__game.scene.info && window.__game.scene.info.id === id && window.__game.scene.info.followers === 2, { timeout: 5000 }, lead);
+  await page.focus('#map');
+  await page.keyboard.press('g');
+  await page.waitForSelector('#ctx:not([hidden]) button[data-a="form"][data-v="1"]');
+  assert(/Leading 2 units/.test(await page.$eval('#ctx', (m) => m.textContent)), 'menu does not say it leads two');
+  await page.click('#ctx button[data-a="form"][data-v="1"]');
+  await page.waitForFunction(() => window.__game.scene.info.form === 1 && document.getElementById('ctx').hidden, { timeout: 5000 });
+  // and with the keyboard alone: G, down to Full, Enter. A follower's speed order reaches the leader.
+  await g(page, (id) => window.__game.select(id), w1);
+  await page.waitForFunction((id) => window.__game.scene.info && window.__game.scene.info.id === id, { timeout: 5000 }, w1);
+  await page.focus('#map');
+  await page.keyboard.press('g');
+  await page.waitForSelector('#ctx:not([hidden]) button[data-a="spd"]');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => Math.abs(window.__game.scene.info.ordKts - 1280) < 1 && document.activeElement.id === 'map', { timeout: 5000 });
+  await g(page, (id) => window.__game.select(id), lead);
+  await page.waitForFunction((id) => window.__game.scene.info && window.__game.scene.info.id === id && Math.abs(window.__game.scene.info.ordKts - 1280) < 1, { timeout: 5000 }, lead);
+  // the card of a formation member offers to leave it
+  await page.click('#panel button[data-act="leave"]');
+  await page.waitForFunction(() => window.__game.scene.info.followers === 0, { timeout: 5000 });
+  assert(page.errors.length === 0, page.errors.join('; '));
+  await page.close();
+  return 'menu by mouse and keyboard, flight of 3, column, full speed, dismissed';
+});
+
 await check('AI versus AI: a battle runs to the end at 64x with no errors', async () => {
   const page = await open();
   await page.waitForSelector('#dlg[open]');
@@ -178,7 +252,7 @@ await check('tutorial: played from the menu to victory with the keyboard alone',
   const seen = [1, 2, 3, 4, 5, 6];
   // fire weapon 2 (Harpoon); again whenever none is in flight, until the Krivak is sunk
   for (let i = 0; i < 60 && (await g(page, () => window.__game.G.winner)) < 0; i++) {
-    const flying = await g(page, () => { const s = window.__game.scene.snap; let n = 0; for (let q = 0, p = 8; q < s[2]; q++, p += 13) if (s[p + 1] === 5 && s[p + 2] === 0) n++; return n; });
+    const flying = await g(page, () => { const s = window.__game.scene.snap; let n = 0; for (let q = 0, p = 8; q < s[2]; q++, p += 16) if (s[p + 1] === 5 && s[p + 2] === 0) n++; return n; });
     if (!flying) await page.keyboard.press('2');
     if ((await hint()).startsWith('Step 7')) seen[6] = 7;
     await sleep(1000);

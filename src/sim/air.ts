@@ -1,7 +1,7 @@
 // Aircraft and helicopter operations: launch, fuel, recovery, sonobuoys.
 import {
   type Sim, NWP, DT, K_FREE, K_SHIP, K_AIR, K_BASE, K_BUOY, F_STOWED, F_RTB, F_ACTIVE, F_LOOP, D_DECK,
-  O_LAUNCH, O_RTB, O_BUOY, E_AIROP, E_BINGO, E_BUOY, hooks, addOrderHandler, spawn, free, emit, arm, depthAt,
+  O_LAUNCH, O_RTB, O_BUOY, E_AIROP, E_BINGO, E_BUOY, hooks, addOrderHandler, spawn, free, emit, arm, depthAt, join,
 } from './sim';
 
 const RECOVER_KM = 1.5;
@@ -39,7 +39,7 @@ export function launch(s: Sim, j: number, lo: number): number {
   if (s.busy[j] > s.tick) return 15;
   const u = s.db.units[s.def[j]], deck = s.db.units[s.def[h]].d.deck;
   if (Number.isInteger(lo) && lo >= 0 && lo < u.loadouts.length) arm(s, j, lo); else arm(s, j, s.lo[j]); // anything else: the default
-  s.flags[j] &= ~(F_STOWED | F_RTB | F_LOOP);
+  s.flags[j] &= ~(F_STOWED | F_RTB | F_LOOP); s.wait[j] = 0;
   s.x[j] = s.x[h]; s.y[j] = s.y[h]; s.wpN[j] = 0;
   s.alt[j] = u.d.minAltM || 15;
   s.ordAlt[j] = u.d.cls === 'helo' ? 150 : Math.min(u.d.maxAltM || 3000, 3000);
@@ -117,6 +117,26 @@ function upkeep(s: Sim, i: number): void {
 }
 
 hooks.air = upkeep;
-addOrderHandler(O_LAUNCH, (s, o) => launch(s, o[2], o[3]));
-addOrderHandler(O_RTB, (s, o) => rtb(s, o[2]));
+// A waiting aircraft goes as soon as the deck and the airframe are ready; it gives up if its ship is lost.
+hooks.deck = (s, j) => { const r = launch(s, j, s.wait[j] - 1); if (r !== 13 && r !== 14 && r !== 15) s.wait[j] = 0; };
+// Launch order [unit, loadout, flight]. flight 0: go now or be refused, as before. flight = a unit id + 1: wait for
+// the deck if it is busy, and form up on that unit (its own id + 1 for the flight leader, or for one aircraft that waits).
+addOrderHandler(O_LAUNCH, (s, o) => {
+  const j = o[2], lead = (o[4] | 0) - 1;
+  let r = launch(s, j, o[3]);
+  if (lead < 0) return r;
+  if (r === 14 || r === 15) {
+    const n = s.db.units[s.def[j]].loadouts.length;
+    s.wait[j] = (Number.isInteger(o[3]) && o[3] >= 0 && o[3] < n ? o[3] : s.lo[j]) + 1;
+    r = 0;
+  }
+  if (r === 0 && lead !== j) join(s, j, lead);
+  return r;
+});
+addOrderHandler(O_RTB, (s, o) => {
+  const i = o[2], r = rtb(s, i);
+  // a leader takes its formation home with it; a follower sent home goes alone
+  if (r === 0) for (let j = 0; j < s.n; j++) if (s.lead[j] === i + 1 && s.leadGen[j] === s.gen[i] && s.kind[j] === K_AIR) rtb(s, j);
+  return r;
+});
 addOrderHandler(O_BUOY, (s, o) => dropBuoy(s, o[2], o[3], o[4]));

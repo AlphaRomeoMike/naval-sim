@@ -17,7 +17,7 @@ field. They are not real performance data.
 | `npm run dev` | Game with hot reload at http://localhost:5173 |
 | `npm run build` | Production build into `dist/`: static files plus a service worker for offline play |
 | `npm test` | Unit tests: simulation, combat, aircraft, AI, scenarios, data rules |
-| `npm run e2e` | Browser checks: menu, keyboard-only play, save/load, AI-versus-AI at 64×, offline |
+| `npm run e2e` | Browser checks: menu, keyboard-only play, save/load, unit menu and flights, AI-versus-AI at 64×, offline |
 | `npm run perf` | Resource budget check in headless Chrome (JS heap, sim step time at 4× CPU throttle, bundle and data sizes) |
 | `npm run data` | Rebuild `public/data/free.json` from `data-src/` |
 

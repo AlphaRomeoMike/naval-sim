@@ -19,7 +19,9 @@ export const D_SENSORS = 1, D_PROP = 2, D_WEAPONS = 4, D_DECK = 8;
 
 // order kinds: [tick, kind, unit, a, b, c]
 export const O_MOVE = 1, O_ADDWP = 2, O_SPEED = 3, O_ALT = 4, O_RADAR = 5, O_SONAR = 6, O_FIRE = 7,
-  O_LAUNCH = 8, O_RTB = 9, O_BUOY = 10, O_WFREE = 11, O_STOP = 12, O_FIT = 13;
+  O_LAUNCH = 8, O_RTB = 9, O_BUOY = 10, O_WFREE = 11, O_STOP = 12, O_FIT = 13, O_JOIN = 14, O_FORM = 15;
+export const FORMS = ['Line abreast', 'Column', 'Wedge']; // formation shapes, by the number O_FORM takes
+const FORM_KM = 4; // spacing between neighbours in a formation
 
 // events: [kind, a, b, c]
 export const E_CONTACT = 1, E_LOST = 2, E_LAUNCH = 3, E_HIT = 4, E_MISS = 5, E_KILL = 6, E_PD = 7,
@@ -139,6 +141,8 @@ export interface Sim {
   pwX: Float32Array; pwY: Float32Array; pwN: Uint8Array; pSpd: Float32Array; pAlt: Float32Array; // patrol route the AI returns to
   pfix: Uint8Array; // per side and target: the track comes from passive bearings (cross-fix or target motion analysis)
   lostId: Int16Array; lostGen: Uint16Array; lostN: Uint8Array; // per side: the last 8 ships or submarines that dropped off the plot
+  lead: Int16Array; leadGen: Uint16Array; slot: Uint8Array; form: Uint8Array; // formation: leader index + 1 (0 = none), place in it, and the leader's chosen shape
+  wait: Uint8Array; // stowed aircraft waiting for the deck: loadout + 1 (0 = not waiting)
 }
 
 export function allocSim(): Sim {
@@ -167,6 +171,7 @@ export function allocSim(): Sim {
     pwX: new Float32Array(MAX * NWP), pwY: new Float32Array(MAX * NWP), pwN: new Uint8Array(MAX), pSpd: new Float32Array(MAX), pAlt: new Float32Array(MAX),
     pfix: new Uint8Array(MAX * 2),
     lostId: new Int16Array(16), lostGen: new Uint16Array(16), lostN: new Uint8Array(2),
+    lead: new Int16Array(MAX), leadGen: new Uint16Array(MAX), slot: new Uint8Array(MAX), form: new Uint8Array(MAX), wait: new Uint8Array(MAX),
   };
 }
 
@@ -241,6 +246,7 @@ export function spawn(s: Sim, kind: number, side: number, def: number, x: number
   s.x[i] = x; s.y[i] = y; s.alt[i] = alt; s.ordAlt[i] = alt; s.dx[i] = 0; s.dy[i] = 1;
   s.spd[i] = 0; s.ordSpd[i] = 0; s.hp[i] = 1; s.wpN[i] = 0; s.tgt[i] = -1; s.host[i] = -1; s.fuel[i] = 0;
   s.pwN[i] = 0; s.pSpd[i] = 0; s.pAlt[i] = alt; s.floor[i] = depthAt(s, x, y); s.aaR[i] = 0; s.suR[i] = 0; s.suD[i] = 1; s.busy[i] = 0; s.fcUsed[i] = 0; s.engaged[i] = 0; s.obj[i] = 0; s.ai[i] = 0; s.aiT[i] = 0; s.label[i] = 0;
+  s.lead[i] = 0; s.slot[i] = 0; s.form[i] = 0; s.wait[i] = 0;
   for (let m = 0; m < NM; m++) { s.mw[i * NM + m] = -1; s.ammo[i * NM + m] = 0; s.ready[i * NM + m] = 0; }
   for (let m = 0; m < NPD; m++) s.pdReady[i * NPD + m] = 0;
   for (let m = 0; m < 4; m++) s.buoyN[i * 4 + m] = 0;
@@ -368,11 +374,74 @@ function addWp(s: Sim, i: number, x: number, y: number): void {
 
 function clampW(v: number): number { return v < -HALF + 1 ? -HALF + 1 : v > HALF - 1 ? HALF - 1 : v; }
 
+// ---------- formations ----------
+/** The unit that i follows, or -1. Read-only: a leader that no longer exists is forgotten in follow(), inside a step. */
+export function leaderOf(s: Sim, i: number): number {
+  const L = s.lead[i] - 1;
+  return L >= 0 && s.kind[L] !== K_FREE && s.gen[L] === s.leadGen[i] ? L : -1;
+}
+/** True if j follows L. */
+function follows(s: Sim, j: number, L: number): boolean { return s.lead[j] === L + 1 && s.leadGen[j] === s.gen[L] && s.kind[j] !== K_FREE; }
+/** Hand out the places in L's formation again, in index order, so there are no gaps or doubles. */
+function renumber(s: Sim, L: number): void {
+  let k = 0;
+  for (let j = 0; j < s.n; j++) if (follows(s, j, L)) s.slot[j] = ++k;
+}
+/** Unit i falls in on L (or on L's own leader). Its followers come with it. Returns 0, or 1 if they cannot form up. */
+export function join(s: Sim, i: number, L: number): number {
+  if (!(L >= 0 && L < s.n)) return 1;
+  if (leaderOf(s, L) >= 0) L = leaderOf(s, L);
+  const k = s.kind[i];
+  if (L === i || s.kind[L] !== k || (k !== K_SHIP && k !== K_SUB && k !== K_AIR) || s.side[L] !== s.side[i]) return 1;
+  if (s.db.units[s.def[L]].d.cls !== s.db.units[s.def[i]].d.cls) return 1; // jets and helicopters cannot hold the same speed
+  for (let j = 0; j < s.n; j++) if (follows(s, j, i)) { s.lead[j] = L + 1; s.leadGen[j] = s.gen[L]; }
+  s.lead[i] = L + 1; s.leadGen[i] = s.gen[L]; s.flags[i] &= ~(F_LOOP | F_RTB);
+  renumber(s, L);
+  return 0;
+}
+/** Unit i leaves its formation and holds where it is; a leader dismisses all its followers. */
+function leave(s: Sim, i: number): void {
+  const L = leaderOf(s, i);
+  for (let j = 0; j < s.n; j++) {
+    if (L >= 0 ? j !== i : !follows(s, j, i)) continue; // a follower: only itself; a leader: each of its followers
+    s.lead[j] = 0; s.wpN[j] = 0; s.ordSpd[j] = s.db.units[s.def[j]].cruiseKmps;
+  }
+  if (L >= 0) renumber(s, L);
+}
+/**
+ * Formation keeping, once per step: aim follower i at its place beside the leader.
+ * shortcut: it steers straight for the place, so it doubles back when the place falls behind it; add a slow-down rule if that looks wrong for ships.
+ */
+function follow(s: Sim, i: number): void {
+  const L = s.lead[i] - 1, stowed = (s.flags[L] & F_STOWED) !== 0;
+  // the leader is gone or has landed, or this unit has been sent home: carry on alone
+  if (s.kind[L] === K_FREE || s.gen[L] !== s.leadGen[i] || s.flags[i] & F_RTB || (stowed && s.wait[L] === 0)) {
+    s.lead[i] = 0; s.ordSpd[i] = s.db.units[s.def[i]].cruiseKmps; // not the catch-up speed: that burns fuel twice as fast
+    return;
+  }
+  if (stowed) return; // the leader is still waiting for the deck: circle until it is up
+  // places alternate right and left of the leader: 1 right, 2 left, 3 right again one further out, ...
+  const k = s.slot[i], f = s.form[L], n = (k + 1) >> 1;
+  const right = f === 1 ? 0 : (k & 1 ? n : -n) * FORM_KM, back = f === 0 ? 0 : (f === 1 ? k : n) * FORM_KM;
+  // the place goes straight into the waypoint arrays and is clamped there (no doubles passed to a call: see test())
+  const o = i * NWP, lim = HALF - 1;
+  s.wpX[o] = s.x[L] - back * s.dx[L] + right * s.dy[L]; s.wpY[o] = s.y[L] - back * s.dy[L] - right * s.dx[L];
+  if (s.wpX[o] < -lim) s.wpX[o] = -lim; else if (s.wpX[o] > lim) s.wpX[o] = lim;
+  if (s.wpY[o] < -lim) s.wpY[o] = -lim; else if (s.wpY[o] > lim) s.wpY[o] = lim;
+  const ex = s.wpX[o] - s.x[i], ey = s.wpY[o] - s.y[i];
+  s.wpN[i] = 1; s.flags[i] &= ~F_LOOP;
+  // the leader's speed plus a little for every km out of place, so the gap closes smoothly and then stays closed
+  const mx = s.db.units[s.def[i]].maxKmps;
+  s.ordSpd[i] = s.spd[L] + Math.sqrt(ex * ex + ey * ey) * 0.02;
+  if (s.ordSpd[i] > mx) s.ordSpd[i] = mx;
+}
+
 // hooks filled in by combat.ts / air.ts / ai.ts so the core stays small and has no import cycles
 export const hooks = {
   weapon: (_s: Sim, _i: number): void => {},
   air: (_s: Sim, _i: number): void => {},
   auto: (_s: Sim): void => {},
+  deck: (_s: Sim, _i: number): void => {}, // a stowed aircraft that is waiting for its turn to launch
   ai: (_s: Sim): void => {},
 };
 
@@ -384,9 +453,10 @@ function move(s: Sim): void {
     if (k === K_FREE || k === K_BASE) continue;
     if (k === K_WPN) { hooks.weapon(s, i); continue; }
     if (k === K_BUOY) { if ((s.fuel[i] -= DT) <= 0) free(s, i); continue; }
-    if (s.flags[i] & F_STOWED) { const h = s.host[i]; s.x[i] = s.x[h]; s.y[i] = s.y[h]; continue; }
+    if (s.flags[i] & F_STOWED) { const h = s.host[i]; s.x[i] = s.x[h]; s.y[i] = s.y[h]; if (s.wait[i] !== 0) hooks.deck(s, i); continue; }
     const u = s.db.units[s.def[i]];
     if (k === K_AIR) { hooks.air(s, i); if (s.kind[i] === K_FREE || s.flags[i] & F_STOWED) continue; }
+    if (s.lead[i] !== 0) follow(s, i);
     // Branch-assigned doubles go through the MV scratch array, not locals (see the note at OB[7] in test()).
     MV[0] = s.wpN[i] > 0 || k === K_AIR ? s.ordSpd[i] : 0; // aircraft without a waypoint orbit in place
     MV[5] = s.dis[i] & D_PROP ? 0 : u.maxKmps;
@@ -417,7 +487,7 @@ function move(s: Sim): void {
       s.y[i] = ny < -HALF + 1 ? -HALF + 1 : ny > HALF - 1 ? HALF - 1 : ny;
       // The depth image is sampled once every 16 steps per unit (its pixels are ~18 km), 16 steps ahead.
       if (k !== K_AIR && (i & 15) === (s.tick & 15) && probe(s, i)) {
-        s.wpN[i] = 0; s.spd[i] = 0; // shortcut: ships stop at the coast, no pathfinding; route around land by hand
+        s.wpN[i] = 0; s.spd[i] = 0; s.lead[i] = 0; // shortcut: ships stop at the coast (and drop out of a formation), no pathfinding; route around land by hand
         emit(s, E_AGROUND, 1 << s.side[i], i, 0, 0);
         s.x[i] = ox; s.y[i] = oy;
       }
@@ -749,9 +819,12 @@ export function step(s: Sim): void {
 // ---------- orders ----------
 /** Apply one order [tick, kind, unit, a, b, c]. Returns 0 if accepted, else a reason code. */
 export function applyOrder(s: Sim, o: number[]): number {
-  const k = o[1], i = o[2];
+  const k = o[1];
+  let i = o[2];
   if (!(i >= 0 && i < MAX) || s.kind[i] === K_FREE || s.kind[i] === K_WPN || s.kind[i] === K_BUOY) return 1;
   if (!Number.isFinite(o[3] ?? 0) || !Number.isFinite(o[4] ?? 0) || !Number.isFinite(o[5] ?? 0)) return 1;
+  // a formation has one helm: course, speed, altitude and shape orders given to a follower go to its leader
+  if ((k === O_MOVE || k === O_ADDWP || k === O_STOP || k === O_SPEED || k === O_ALT || k === O_FORM) && leaderOf(s, i) >= 0) i = leaderOf(s, i);
   const u = s.db.units[s.def[i]];
   switch (k) {
     case O_MOVE: s.wpN[i] = 0; s.flags[i] &= ~(F_LOOP | F_RTB); addWp(s, i, clampW(o[3]), clampW(o[4])); return 0;
@@ -764,18 +837,25 @@ export function applyOrder(s: Sim, o: number[]): number {
       return 0;
     }
     case O_ALT: {
-      let a = o[3];
-      if (u.kind === K_AIR) { const lo = u.d.minAltM || 15, hi = u.d.maxAltM || 10000; a = a < lo ? lo : a > hi ? hi : a; }
-      else if (u.kind === K_SUB) { const lim = -(u.d.maxDepthM || 300); a = a > -15 ? -15 : a < lim ? lim : a; }
-      else return 1;
-      s.ordAlt[i] = a;
+      if (u.kind !== K_AIR && u.kind !== K_SUB) return 1;
+      setAlt(s, i, o[3]);
+      for (let j = 0; j < s.n; j++) if (follows(s, j, i)) setAlt(s, j, o[3]); // the formation climbs or dives together
       return 0;
     }
+    case O_JOIN: if (o[3] < 0) { leave(s, i); return 0; } return join(s, i, o[3]);
+    case O_FORM: if (!(o[3] >= 0 && o[3] < FORMS.length)) return 1; s.form[i] = o[3]; return 0;
     case O_RADAR: if (o[3]) s.flags[i] |= F_RADAR; else s.flags[i] &= ~F_RADAR; return 0;
     case O_SONAR: if (o[3] && u.activeKm > 0) s.flags[i] |= F_ACTIVE; else s.flags[i] &= ~F_ACTIVE; return 0;
     case O_WFREE: if (o[3]) s.flags[i] |= F_WFREE; else s.flags[i] &= ~F_WFREE; return 0;
     default: { const h = handlers[k]; return h ? h(s, o) : 1; }
   }
+}
+/** Set unit i's ordered altitude or depth, held inside what its airframe or hull allows. */
+function setAlt(s: Sim, i: number, a: number): void {
+  const u = s.db.units[s.def[i]];
+  if (u.kind === K_AIR) { const lo = u.d.minAltM || 15, hi = u.d.maxAltM || 10000; a = a < lo ? lo : a > hi ? hi : a; }
+  else { const lim = -(u.d.maxDepthM || 300); a = a > -15 ? -15 : a < lim ? lim : a; }
+  s.ordAlt[i] = a;
 }
 /** Orders implemented by other modules (fire, launch, recover, buoy) register here. */
 const handlers: ((s: Sim, o: number[]) => number)[] = [];
@@ -828,13 +908,14 @@ export function hash(s: Sim): number {
 export const SCRATCH: Set<string> = new Set(['depth', 'ev', 'cellStart', 'cellItems', 'cellOf', 'airList', 'hashView', 'hashViewY']);
 
 // ---------- snapshot for the UI ----------
-export const SNAP_HDR = 8, SNAP_REC = 13;
+export const SNAP_HDR = 8, SNAP_REC = 16;
 export const SNAP_LEN = SNAP_HDR + MAX * SNAP_REC + 256 * 4;
 
 /**
  * Write what `side` is allowed to see into buf. Header: tick, winner, count, evCount, endTick.
  * Record: id, kind, side, def, x, y, dx, dy, alt, hpFrac, level(0 ghost,1 bearing,2 track,3 own), flags|dis<<8,
- * generation (so the page can tell a reused slot from the unit it had selected).
+ * generation (so the page can tell a reused slot from the unit it had selected), speed in knots (own units and
+ * tracks), fuel in minutes (own aircraft), and the leader's id if it flies or sails in a formation (own units, else -1).
  * Bearing-only contacts carry the holder's position and a unit direction, never the range.
  */
 export function writeSnapshot(s: Sim, side: number, buf: Float32Array): void {
@@ -860,6 +941,9 @@ export function writeSnapshot(s: Sim, side: number, buf: Float32Array): void {
     buf[p + 6] = dx; buf[p + 7] = dy; buf[p + 8] = alt; buf[p + 9] = hp; buf[p + 10] = k === K_BUOY && !own ? 1 : lvl;
     buf[p + 11] = own ? s.flags[i] | (s.dis[i] << 8) : 0;
     buf[p + 12] = s.gen[i];
+    buf[p + 13] = lvl >= 2 && k !== K_WPN && k !== K_BUOY ? s.spd[i] / KTS : 0;
+    buf[p + 14] = own && k === K_AIR ? s.fuel[i] / 60 : 0;
+    buf[p + 15] = own ? leaderOf(s, i) : -1;
     p += SNAP_REC; count++;
   }
   let ne = 0;
@@ -881,7 +965,8 @@ export interface Info {
   fc: number; fcUsed: number; hasRadar: boolean; hasActive: boolean; depth: number;
   mounts: { m: number; w: number; name: string; ammo: number; readyS: number; minKm: number; maxKm: number; altMin: number; altMax: number }[];
   pd: string[]; buoys: { b: number; name: string; n: number }[];
-  hangar: { id: number; name: string; type: string; stowed: boolean; readyS: number; lo: number; loadouts: string[] }[];
+  hangar: { id: number; name: string; type: string; stowed: boolean; queued: boolean; readyS: number; lo: number; loadouts: string[] }[];
+  lead: number; leadName: string; followers: number; form: number; // formation: leader id (-1 if none or if it leads), how many follow it, the shape
 }
 
 export function describe(s: Sim, i: number, side: number): Info | null {
@@ -896,6 +981,7 @@ export function describe(s: Sim, i: number, side: number): Info | null {
       id: i, own: false, name: known ? u.d.name : 'Unknown contact', type: known ? u.id : '', cls: known ? u.d.cls : '', kind: k, level: lvl,
       hp: 0, maxHp: 0, dis: 0, flags: 0, kts: lvl === 2 ? s.spd[i] / KTS : 0, ordKts: 0, maxKts: 0, alt: lvl === 2 ? s.alt[i] : 0, ordAlt: 0,
       minAlt: 0, maxAlt: 0, fuelMin: 0, wp: [], host: -1, fc: 0, fcUsed: 0, hasRadar: false, hasActive: false, depth: 0, mounts: [], pd: [], buoys: [], hangar: [],
+      lead: -1, leadName: '', followers: 0, form: 0,
     };
   }
   const info: Info = {
@@ -906,9 +992,13 @@ export function describe(s: Sim, i: number, side: number): Info | null {
     alt: own || lvl === 2 ? s.alt[i] : 0, ordAlt: s.ordAlt[i], minAlt: u.d.minAltM || 0,
     maxAlt: k === K_SUB ? -(u.d.maxDepthM || 300) : u.d.maxAltM || 0, fuelMin: s.fuel[i] / 60, wp: [], host: s.host[i],
     fc: u.d.fc, fcUsed: s.fcUsed[i], hasRadar: !!u.d.radar, hasActive: u.activeKm > 0, depth: s.floor[i],
-    mounts: [], pd: [], buoys: [], hangar: [],
+    mounts: [], pd: [], buoys: [], hangar: [], lead: -1, leadName: '', followers: 0, form: 0,
   };
   if (!own) return info;
+  const L = leaderOf(s, i);
+  if (L >= 0) { info.lead = L; info.leadName = s.names[s.label[L] - 1] || s.db.units[s.def[L]].d.name; info.ordKts = s.ordSpd[L] / KTS; } // its helm is the leader's
+  for (let j = 0; j < s.n; j++) if (follows(s, j, L >= 0 ? L : i)) info.followers++;
+  info.form = s.form[L >= 0 ? L : i];
   for (let w = 0; w < s.wpN[i]; w++) info.wp.push(s.wpX[i * NWP + w], s.wpY[i * NWP + w]);
   for (let m = 0; m < NM; m++) {
     const w = s.mw[i * NM + m];
@@ -921,7 +1011,7 @@ export function describe(s: Sim, i: number, side: number): Info | null {
   for (let j = 0; j < s.n; j++) {
     if (s.kind[j] === K_AIR && s.host[j] === i && s.hostGen[j] === s.gen[i] && s.side[j] === s.side[i]) {
       const a = s.db.units[s.def[j]];
-      info.hangar.push({ id: j, name: s.names[s.label[j] - 1] || a.d.name, type: a.id, stowed: (s.flags[j] & F_STOWED) !== 0, readyS: Math.max(0, (s.busy[j] - s.tick) * DT), lo: s.lo[j], loadouts: a.loadouts.map((l) => l.name) });
+      info.hangar.push({ id: j, name: s.names[s.label[j] - 1] || a.d.name, type: a.id, stowed: (s.flags[j] & F_STOWED) !== 0, queued: s.wait[j] !== 0, readyS: Math.max(0, (s.busy[j] - s.tick) * DT), lo: s.lo[j], loadouts: a.loadouts.map((l) => l.name) });
     }
   }
   return info;

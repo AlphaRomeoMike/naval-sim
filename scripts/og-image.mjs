@@ -7,7 +7,7 @@ const EVAL = `(async () => {
   const d = document.getElementById('dlg'); if (d.open) d.close();
   g.startScenario(g.SCENARIOS.find((s) => s.id === 'bomber-stream'), { side: 0, ai: 3, seed: 4 });
   g.setSpeed(64);
-  const recs = () => { const s = g.scene.snap, out = []; if (s) for (let q = 0, p = 8; q < s[2]; q++, p += 13) out.push({ id: s[p], k: s[p + 1], side: s[p + 2], x: s[p + 4], y: s[p + 5], lvl: s[p + 10], stowed: s[p + 11] & 8 }); return out; };
+  const recs = () => { const s = g.scene.snap, out = []; if (s) for (let q = 0, p = 8; q < s[2]; q++, p += 16) out.push({ id: s[p], k: s[p + 1], side: s[p + 2], x: s[p + 4], y: s[p + 5], lvl: s[p + 10], stowed: s[p + 11] & 8 }); return out; };
   // run until the raid is on the plot: several hostile tracks, at least two of them missiles
   for (let i = 0; i < 280; i++) {
     await sleep(250);
