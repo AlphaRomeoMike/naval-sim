@@ -1,7 +1,7 @@
 {
   "name": "Flag Plot",
   "short_name": "Flag Plot",
-  "description": "A lightweight Cold War naval tactics game.",
+  "description": "A free Cold War naval tactics game for the browser: US Navy against the Soviet Navy on a 2D tactical plot.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

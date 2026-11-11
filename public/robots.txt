@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://flag-plot.pages.dev/sitemap.xml

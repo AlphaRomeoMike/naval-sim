@@ -22,7 +22,7 @@ describe('repository', () => {
     const ALLOWED = new RegExp('^(' + [
       '\\.env\\.example', '\\.gitignore', 'README\\.md', 'index\\.html', 'package(-lock)?\\.json', 'tsconfig\\.json', 'vite\\.config\\.ts',
       '\\.github/workflows/deploy\\.yml', 'data-src/(us|ussr)-free\\.json',
-      'public/(data/free\\.json|icon\\.svg|manifest\\.webmanifest|map/(depth\\.png|land-50m\\.json))',
+      'public/(data/free\\.json|icon\\.svg|manifest\\.webmanifest|og\\.png|robots\\.txt|sitemap\\.xml|map/(depth\\.png|land-50m\\.json))',
       'scripts/[\\w-]+\\.(mjs|ts)', 'src/(sim/)?[\\w-]+\\.ts', 'test/([\\w-]+(\\.test)?\\.ts|fixture\\.json)',
     ].join('|') + ')$');
     expect(tracked.filter((f) => !ALLOWED.test(f))).toEqual([]);

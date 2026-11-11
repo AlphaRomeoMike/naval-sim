@@ -4,10 +4,24 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1c2c">
-<meta name="description" content="A lightweight Cold War naval tactics game that runs in the browser.">
+<title>Flag Plot: free Cold War naval tactics game in your browser</title>
+<meta name="description" content="Command frigates, submarines and aircraft on a 2D tactical plot, US Navy against the Soviet Navy, 1970 to 1990. Free to play in the browser, no install, works offline.">
+<!-- Link previews and search. Absolute addresses are required here, so the site's address is written out:
+     change it in this block, public/robots.txt and public/sitemap.xml if the game moves to another domain. -->
+<link rel="canonical" href="https://flag-plot.pages.dev/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Flag Plot">
+<meta property="og:title" content="Flag Plot: free Cold War naval tactics game in your browser">
+<meta property="og:description" content="Command frigates, submarines and aircraft on a 2D tactical plot, US Navy against the Soviet Navy, 1970 to 1990. Free to play in the browser, no install, works offline.">
+<meta property="og:url" content="https://flag-plot.pages.dev/">
+<meta property="og:image" content="https://flag-plot.pages.dev/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Flag Plot: a tactical plot showing US fighters heading out from a carrier group towards a raid of Soviet bombers off the Norwegian coast.">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"VideoGame","name":"Flag Plot","url":"https://flag-plot.pages.dev/","image":"https://flag-plot.pages.dev/og.png","description":"Command frigates, submarines and aircraft on a 2D tactical plot, US Navy against the Soviet Navy, 1970 to 1990. Free to play in the browser, no install, works offline.","genre":["Strategy","Simulation"],"gamePlatform":"Web browser","applicationCategory":"Game","operatingSystem":"Any","inLanguage":"en","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>Flag Plot</title>
 <style>
 :root { --bg:#0b1c2c; --panel:#10283c; --line:#234560; --text:#dbe8f2; --dim:#8ea6b8; --own:#6fd3ff; --foe:#ff7a66; --ok:#7bd88f; --warn:#ffd166; }
 * { box-sizing: border-box; }
@@ -60,6 +74,11 @@ table.keys { border-collapse:collapse; width:100%; } table.keys td { padding:3px
 </style>
 </head>
 <body>
+<noscript><div style="max-width:40em;margin:3em auto;padding:0 16px">
+<h1>Flag Plot</h1>
+<p>A free Cold War naval tactics game for the browser. Command frigates, submarines and aircraft on a 2D tactical plot, US Navy against the Soviet Navy, 1970 to 1990: radar and sonar, missiles, torpedoes, sonobuoys and an enemy that hunts back. It has a ten-minute tutorial and three scenarios, plays with mouse, touch or keyboard alone, and works offline once loaded.</p>
+<p>The game needs JavaScript to run. Please turn it on and reload.</p>
+</div></noscript>
 <canvas id="land"></canvas>
 <canvas id="map" tabindex="0" role="application" aria-label="Tactical map. Press H for keyboard help."></canvas>
 <header id="bar">
